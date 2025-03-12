@@ -7,24 +7,23 @@ export function ItemProductos({ producto }) {
       <div className="card" style={{ width: "19rem" }}>
         <img
           src={producto.imagen}
-          class="card-img-top"
-          alt="{producto.nombre}"
+          className="card-img-top mx-auto d-block"
+          alt={producto.nombre}
           style={{ width: "130px" }}
-          className="mx-auto d-block"
         />
         <div className="text">
           <h5 className="title">{producto.nombre}</h5>
         </div>
-        <ul class="list-group list-group-flush ">
-          <li className="list-group-item">Precio: ${producto.precio}</li>
+        <ul className="list-group list-group-flush">
+          <li className="list-group-item">Número de Arete: {producto.Arete}</li>
           <li className="list-group-item">
-            Cantidad disponible: {producto.cantidad}
+            Edad: {producto.Edad}
           </li>
           <li className="list-group-item">
-            {producto.contenido || producto.unidad}
+            Peso: {producto.Peso}
           </li>
         </ul>
-        <div class="card-body"></div>
+        <div className="card-body"></div>
       </div>
     </div>
   );
