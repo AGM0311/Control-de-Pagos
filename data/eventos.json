@@ -1,0 +1,4 @@
+[
+    { "id": 1, "tipo": "Vacunación", "fecha": "2023-10-01", "responsable": "Juan Pérez" },
+    { "id": 2, "tipo": "Revisión", "fecha": "2023-10-05", "responsable": "Ana Gómez" }
+]

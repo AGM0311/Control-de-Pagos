@@ -1,0 +1,4 @@
+[
+    { "id": 1, "nombre": "Vaca_001", "raza": "Holstein", "edad": 3 },
+    { "id": 2, "nombre": "Toro_A2", "raza": "Angus", "edad": 5 }
+]

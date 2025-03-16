@@ -1,0 +1,4 @@
+[
+    { "id": 1, "nombre": "Juan Pérez", "puesto": "Veterinario" },
+    { "id": 2, "nombre": "Ana Gómez", "puesto": "Cuidador" }
+]
