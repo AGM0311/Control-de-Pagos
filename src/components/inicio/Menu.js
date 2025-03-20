@@ -9,17 +9,17 @@ export function Menu() {
         <Link className="nav-link text-white mt-3" to="/">
           🏠 Home
         </Link>
-        <Link className="nav-link text-white mt-3" to="/producto">
-          🛍️ Listado
+        <Link className="nav-link text-white mt-3" to="/catalogo">
+          🛍️ Catalogo
         </Link>
-        <Link className="nav-link text-white mt-3" to="/formproductos">
-          📦 Usuarios
+        <Link className="nav-link text-white mt-3" to="/registroform">
+          📦 Registro
         </Link>
-        <span className="nav-link text-secondary mt-3" aria-disabled="true">
-          ❌ Gestion
+        <span className="nav-link text-secondary mt-3" to="">
+           Gestion
         </span>
-        <span className="nav-link text-secondary mt-3" aria-disabled="true">
-          ❌ Informe
+        <span className="nav-link text-secondary mt-3" to="">
+          Informe
         </span>
       </nav>
     </>

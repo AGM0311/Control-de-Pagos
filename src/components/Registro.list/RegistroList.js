@@ -1,6 +1,6 @@
 import React from 'react'
 import{Button, Table} from "react-bootstrap"
-export  function ListProductos() {
+export  function RegistroList() {
   return (
     <Table striped bordered hover>
       <thead>

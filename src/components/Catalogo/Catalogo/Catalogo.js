@@ -1,10 +1,10 @@
 import React from 'react'
 import{Tabs, Tab,Row,Col} from "react-bootstrap";
-import{ItemProductos} from "../ItemProductos";
+import{Tarjeta} from "../Tarjeta/Tarjeta";
 import {Datos} from '../../../utils/bd';
-import "./HomeProductos.scss";
+import "./Catalogo.scss";
 
-export function HomeProductos() {
+export function Catalogo() {
     console.log(Datos);
 const fondo={
     tema:{
@@ -22,11 +22,11 @@ const fondo={
     id="uncontrolled-tab-example"
     className="mb-3"
   >
-    <Tab eventKey="home" title="Lista de Productos">
+    <Tab eventKey="home" title="Catalogo">
     <Row xs={1} sm={2} md={3} lg={4}> 
-      {Datos.map((producto,index)=>(
+      {Datos.map((Catalogo,index)=>(
         <Col>
-        <ItemProductos key={index} producto={producto} />
+        <Tarjeta key={index} catalogo={Catalogo} />
         </Col>
       ))}
       </Row>

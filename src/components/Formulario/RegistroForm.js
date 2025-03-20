@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { Button, Form, Row, Col, InputGroup } from 'react-bootstrap';
 import { useFormik } from 'formik';
 import { initialValues, validationSchema } from './Productos.form'; // Asegúrate de actualizar este archivo
-import { ListProductos } from '../ListProductos'; // Asegúrate de que este componente esté adaptado
+import { RegistroList} from '../Registro.list'; // Asegúrate de que este componente esté adaptado
 
-export function Productos() {
+export function RegistroForm() {
   const [informacion, setInformacion] = useState([]);
 
   const formik = useFormik({
@@ -84,7 +84,7 @@ export function Productos() {
 
       <Row>
         {/* Pasa los datos de ganado al componente ListProductos */}
-        <ListProductos datos={informacion} />
+        <RegistroList datos={informacion} />
       </Row>
     </div>
   );

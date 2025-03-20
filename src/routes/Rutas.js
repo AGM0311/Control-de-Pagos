@@ -1,9 +1,9 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
-import { HomeProductos } from "../components/productos";
+import { Catalogo } from "../components/Catalogo";
 import { Home } from "../page";
 import { Plantilla } from "../layouts";
-import { Productos } from "../components/Formulario/";
+import { RegistroForm } from "../components/Formulario/RegistroForm";
 export function Rutas() {
 
   const Layouts=(Layout,Page)=>(
@@ -15,8 +15,8 @@ export function Rutas() {
   return (
     <Routes>
       <Route path="/" element={Layouts(Plantilla,Home)} />
-      <Route path="/producto" element={Layouts(Plantilla,HomeProductos)} />
-      <Route path="/formproductos" element={Layouts(Plantilla,Productos)}/>
+      <Route path="/catalogo" element={Layouts(Plantilla,Catalogo)} />
+      <Route path="/registroform" element={Layouts(Plantilla,RegistroForm)}/>
     </Routes>
   );
 }
