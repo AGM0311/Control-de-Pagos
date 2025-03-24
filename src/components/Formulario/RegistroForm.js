@@ -43,14 +43,14 @@ export function RegistroForm() {
           </Form.Group>
 
           <Form.Group as={Col} md="3">
-            <Form.Label>Cantidad</Form.Label>
+            <Form.Label>Peso</Form.Label>
             <InputGroup>
               <Form.Control
                 type="number"
-                placeholder="Cantidad"
-                name="cantidad"
-                onChange={(e) => formik.setFieldValue("cantidad", Number(e.target.value))}
-                value={formik.values.cantidad}
+                placeholder="Peso"
+                name="peso"
+                onChange={(e) => formik.setFieldValue("peso", Number(e.target.value))}
+                value={formik.values.peso}
               />
             </InputGroup>
           </Form.Group>
@@ -58,13 +58,13 @@ export function RegistroForm() {
 
         <Row className="mb-3">
           <Form.Group as={Col} md="3">
-            <Form.Label>Peso</Form.Label>
+            <Form.Label>Edad</Form.Label>
             <Form.Control
               type="number"
-              placeholder="Peso"
-              name="peso"
-              onChange={(e) => formik.setFieldValue("peso", Number(e.target.value))}
-              value={formik.values.peso}
+              placeholder="Edad"
+              name="edad"
+              onChange={(e) => formik.setFieldValue("edad", Number(e.target.value))}
+              value={formik.values.edad}
             />
           </Form.Group>
 
