@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Button, Form, Row, Col, InputGroup } from 'react-bootstrap';
 import { useFormik } from 'formik';
-import { initialValues, validationSchema } from './Productos.form'; // Asegúrate de actualizar este archivo
-import { RegistroList} from '../Registro.list'; // Asegúrate de que este componente esté adaptado
+import { RegistroList } from '../Registro.list';
+import { initialValues, validationSchema } from './validacion.form'; // Asegúrate de que este archivo esté actualizado
 
 export function RegistroForm() {
   const [informacion, setInformacion] = useState([]);
@@ -11,10 +11,8 @@ export function RegistroForm() {
     initialValues: initialValues(),
     validationSchema: validationSchema(),
     onSubmit: (formValue) => {
-      // Agregar el nuevo registro de ganado al estado
       setInformacion([...informacion, formValue]);
-      console.log(formValue); // Para depuración
-      formik.resetForm(); // Limpiar el formulario después de enviar
+      formik.resetForm();
     },
   });
 
@@ -22,7 +20,7 @@ export function RegistroForm() {
     <div className="p-4">
       <Form onSubmit={formik.handleSubmit}>
         <Row className="mb-3">
-          <Form.Group as={Col} md="3" controlId="validationCustom01">
+          <Form.Group as={Col} md="3">
             <Form.Label>Nombre del Animal</Form.Label>
             <Form.Control
               type="text"
@@ -33,57 +31,57 @@ export function RegistroForm() {
             />
           </Form.Group>
 
-          <Form.Group as={Col} md="3" controlId="validationCustom02">
+          <Form.Group as={Col} md="3">
             <Form.Label>Número de Arete</Form.Label>
             <Form.Control
               type="number"
               placeholder="Arete"
               name="arete"
-              onChange={formik.handleChange}
+              onChange={(e) => formik.setFieldValue("arete", Number(e.target.value))}
               value={formik.values.arete}
             />
           </Form.Group>
 
-          <Form.Group as={Col} md="3" controlId="validationCustomUsername">
+          <Form.Group as={Col} md="3">
             <Form.Label>Cantidad</Form.Label>
-            <InputGroup hasValidation>
+            <InputGroup>
               <Form.Control
                 type="number"
                 placeholder="Cantidad"
                 name="cantidad"
-                onChange={formik.handleChange}
+                onChange={(e) => formik.setFieldValue("cantidad", Number(e.target.value))}
                 value={formik.values.cantidad}
               />
             </InputGroup>
           </Form.Group>
         </Row>
+
         <Row className="mb-3">
-          <Form.Group as={Col} md="3" controlId="validationCustom03">
+          <Form.Group as={Col} md="3">
             <Form.Label>Peso</Form.Label>
             <Form.Control
-              type="text"
+              type="number"
               placeholder="Peso"
               name="peso"
-              onChange={formik.handleChange}
+              onChange={(e) => formik.setFieldValue("peso", Number(e.target.value))}
               value={formik.values.peso}
             />
           </Form.Group>
+
           <Form.Group as={Col} md="5">
             <Form.Label>Imagen</Form.Label>
             <Form.Control
               type="file"
               name="imagen"
-              onChange={(e) => {
-                formik.setFieldValue('imagen', e.target.files[0]);
-              }}
+              onChange={(e) => formik.setFieldValue("imagen", e.target.files[0])}
             />
           </Form.Group>
         </Row>
-        <Button type="submit">Enviar</Button>
+
+        <Button type="submit">Agregar Animal</Button>
       </Form>
 
-      <Row>
-        {/* Pasa los datos de ganado al componente ListProductos */}
+      <Row className="mt-4">
         <RegistroList datos={informacion} />
       </Row>
     </div>

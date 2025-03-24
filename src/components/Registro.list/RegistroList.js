@@ -1,32 +1,38 @@
-import React from 'react'
-import{Button, Table} from "react-bootstrap"
-export  function RegistroList() {
+import React from 'react';
+import { Table } from 'react-bootstrap';
+
+export function RegistroList({ datos }) {
   return (
-    <Table striped bordered hover>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Nombre Producto</th>
-          <th>Precio</th>
-          <th>Cantidad</th>
-          <th>Unidad</th>
-          <th>Imagen</th>
-          <th>Editar</th>
-          <th>Eliminar</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>1</td>
-          <td>Galleta</td>
-          <td>$15.00</td>
-          <td>15</td>
-          <td>250g</td>
-          <td>imagen</td>
-          <td><Button variant="success">Editar</Button></td>
-          <td><Button variant='danger'>Eliminar</Button></td>
-        </tr>
-      </tbody>
-    </Table>
-  )
+    <div>
+      <h3>Lista de Registros</h3>
+      <Table striped bordered hover>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Arete</th>
+            <th>Peso</th>
+            <th>Edad</th>
+            <th>Imagen</th>
+          </tr>
+        </thead>
+        <tbody>
+          {datos.map((registro, index) => (
+            <tr key={index}>
+              <td>{registro.nombre}</td>
+              <td>{registro.arete}</td>
+              <td>{registro.peso}</td>
+              <td>{registro.edad}</td>
+              <td>
+                {registro.imagen ? (
+                  <img src={URL.createObjectURL(registro.imagen)} alt="Imagen del animal" width="100" />
+                ) : (
+                  'No disponible'
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+    </div>
+  );
 }

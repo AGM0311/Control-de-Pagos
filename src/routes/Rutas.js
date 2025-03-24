@@ -3,7 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import { Catalogo } from "../components/Catalogo";
 import { Home } from "../page";
 import { Plantilla } from "../layouts";
-import { RegistroForm } from "../components/Formulario/RegistroForm";
+//import { RegistroForm } from "../components/Formulario/RegistroForm";
 export function Rutas() {
 
   const Layouts=(Layout,Page)=>(
@@ -16,7 +16,6 @@ export function Rutas() {
     <Routes>
       <Route path="/" element={Layouts(Plantilla,Home)} />
       <Route path="/catalogo" element={Layouts(Plantilla,Catalogo)} />
-      <Route path="/registroform" element={Layouts(Plantilla,RegistroForm)}/>
     </Routes>
   );
 }
