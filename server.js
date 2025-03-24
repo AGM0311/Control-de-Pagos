@@ -1,6 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const { BASE_API, API_ROUTES } = require('../../utils/constantes');
 
 const app = express();
 const port = 3001;
@@ -10,14 +11,14 @@ app.use(express.json()); // Para analizar el cuerpo de las solicitudes en format
 // Rutas para trabajadores
 const trabajadoresPath = path.join(__dirname, 'data', 'trabajadores.json');
 
-app.get('/api/trabajadores', (req, res) => {
+app.get(API_ROUTES.TRABAJADORES.GET, (req, res) => {
   fs.readFile(trabajadoresPath, 'utf8', (err, data) => {
     if (err) return res.status(500).json({ message: 'Error al leer los datos' });
     res.json(JSON.parse(data));
   });
 });
 
-app.post('/api/trabajadores', (req, res) => {
+app.post(API_ROUTES.TRABAJADORES.POST, (req, res) => {
   const newTrabajador = req.body;
   fs.readFile(trabajadoresPath, 'utf8', (err, data) => {
     if (err) return res.status(500).json({ message: 'Error al leer los datos' });
@@ -31,7 +32,7 @@ app.post('/api/trabajadores', (req, res) => {
   });
 });
 
-app.delete('/api/trabajadores/:id', (req, res) => {
+app.delete(API_ROUTES.TRABAJADORES.DELETE, (req, res) => {
   const trabajadorId = parseInt(req.params.id);
   fs.readFile(trabajadoresPath, 'utf8', (err, data) => {
     if (err) return res.status(500).json({ message: 'Error al leer los datos' });
@@ -47,14 +48,14 @@ app.delete('/api/trabajadores/:id', (req, res) => {
 // Rutas para ganado
 const ganadoPath = path.join(__dirname, 'data', 'ganado.json');
 
-app.get('/api/ganado', (req, res) => {
+app.get(API_ROUTES.GANADO.GET, (req, res) => {
   fs.readFile(ganadoPath, 'utf8', (err, data) => {
     if (err) return res.status(500).json({ message: 'Error al leer los datos' });
     res.json(JSON.parse(data));
   });
 });
 
-app.post('/api/ganado', (req, res) => {
+app.post(API_ROUTES.GANADO.POST, (req, res) => {
   const newGanado = req.body;
   fs.readFile(ganadoPath, 'utf8', (err, data) => {
     if (err) return res.status(500).json({ message: 'Error al leer los datos' });
@@ -68,7 +69,7 @@ app.post('/api/ganado', (req, res) => {
   });
 });
 
-app.delete('/api/ganado/:id', (req, res) => {
+app.delete(API_ROUTES.GANADO.DELETE, (req, res) => {
   const ganadoId = parseInt(req.params.id);
   fs.readFile(ganadoPath, 'utf8', (err, data) => {
     if (err) return res.status(500).json({ message: 'Error al leer los datos' });
@@ -84,14 +85,14 @@ app.delete('/api/ganado/:id', (req, res) => {
 // Rutas para eventos
 const eventosPath = path.join(__dirname, 'data', 'eventos.json');
 
-app.get('/api/eventos', (req, res) => {
+app.get(API_ROUTES.EVENTOS.GET, (req, res) => {
   fs.readFile(eventosPath, 'utf8', (err, data) => {
     if (err) return res.status(500).json({ message: 'Error al leer los datos' });
     res.json(JSON.parse(data));
   });
 });
 
-app.post('/api/eventos', (req, res) => {
+app.post(API_ROUTES.EVENTOS.POST, (req, res) => {
   const newEvento = req.body;
   fs.readFile(eventosPath, 'utf8', (err, data) => {
     if (err) return res.status(500).json({ message: 'Error al leer los datos' });
@@ -105,7 +106,7 @@ app.post('/api/eventos', (req, res) => {
   });
 });
 
-app.delete('/api/eventos/:id', (req, res) => {
+app.delete(API_ROUTES.EVENTOS.DELETE, (req, res) => {
   const eventoId = parseInt(req.params.id);
   fs.readFile(eventosPath, 'utf8', (err, data) => {
     if (err) return res.status(500).json({ message: 'Error al leer los datos' });
@@ -120,5 +121,5 @@ app.delete('/api/eventos/:id', (req, res) => {
 
 // Iniciar el servidor
 app.listen(port, () => {
-  console.log(`Servidor escuchando en http://localhost:${port}`);
+  console.log(`Servidor escuchando en ${BASE_API}`);
 });

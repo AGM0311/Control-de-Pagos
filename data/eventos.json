@@ -1,4 +1,10 @@
 [
-    { "id": 1, "tipo": "Vacunación", "fecha": "2023-10-01", "responsable": "Juan Pérez" },
-    { "id": 2, "tipo": "Revisión", "fecha": "2023-10-05", "responsable": "Ana Gómez" }
+    { "id": 3, "tipo": "Desparasitación", "fecha": "2023-10-10", "responsable": "AXL" },
+    { "id": 4, "tipo": "Vacunación", "fecha": "2023-10-15", "responsable": "María Rodríguez" },
+    { "id": 5, "tipo": "Revisión", "fecha": "2023-10-20", "responsable": "Luisa Fernández" },
+    { "id": 6, "tipo": "Cirugía", "fecha": "2023-10-25", "responsable": "Pedro Martínez" },
+    { "id": 7, "tipo": "Vacunación", "fecha": "2023-11-01", "responsable": "Sofía García" },
+    { "id": 8, "tipo": "Revisión", "fecha": "2023-11-05", "responsable": "Jorge Sánchez" },
+    { "id": 9, "tipo": "Desparasitación", "fecha": "2023-11-10", "responsable": "Elena Ruiz" },
+    { "id": 10, "tipo": "Vacunación", "fecha": "2023-11-15", "responsable": "Miguel Díaz" }
 ]
