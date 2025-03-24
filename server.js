@@ -1,7 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const { BASE_API, API_ROUTES } = require('../../utils/constantes');
+const { BASE_API, API_ROUTES } = require('./src/utils/constantes'); // Importación corregida
 
 const app = express();
 const port = 3001;
@@ -121,5 +121,5 @@ app.delete(API_ROUTES.EVENTOS.DELETE, (req, res) => {
 
 // Iniciar el servidor
 app.listen(port, () => {
-  console.log(`Servidor escuchando en ${BASE_API}`);
+  console.log(`Servidor escuchando en ${BASE_API}:${port}`); // Mensaje corregido
 });
