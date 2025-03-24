@@ -1,11 +1,20 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const { BASE_API, API_ROUTES } = require('./src/utils/constantes'); // Importación corregida
+const cors = require('cors'); // Importa el paquete cors
+const { BASE_API, API_ROUTES } = require('./src/utils/constantes');
 
 const app = express();
 const port = 3001;
 
+// Configuración CORS
+const corsOptions = {
+  origin: 'http://localhost:3000', // Reemplaza con tu puerto de frontend si es diferente
+  methods: ['GET', 'POST', 'DELETE'], // Métodos permitidos
+  allowedHeaders: ['Content-Type'] // Headers permitidos
+};
+
+app.use(cors(corsOptions)); // Habilita CORS con las opciones configuradas
 app.use(express.json()); // Para analizar el cuerpo de las solicitudes en formato JSON
 
 // Rutas para trabajadores
@@ -121,5 +130,5 @@ app.delete(API_ROUTES.EVENTOS.DELETE, (req, res) => {
 
 // Iniciar el servidor
 app.listen(port, () => {
-  console.log(`Servidor escuchando en ${BASE_API}:${port}`); // Mensaje corregido
+  console.log(`Servidor escuchando en ${BASE_API}:${port}`);
 });
