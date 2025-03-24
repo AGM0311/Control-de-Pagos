@@ -18,6 +18,7 @@ export function Catalogo() {
 
     return (
         <div className='container' style={fondo.tema}>
+            <RegistroForm />
             <Row xs={1} sm={2} md={3} lg={4}> 
                 {Datos.map((Catalogo, index) => (
                     <Col key={index}>
@@ -25,7 +26,7 @@ export function Catalogo() {
                     </Col>
                 ))}
             </Row>
-            <RegistroForm />
+            
         </div>
     );
 }
