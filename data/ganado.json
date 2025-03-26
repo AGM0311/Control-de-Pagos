@@ -1,6 +1,6 @@
 [
   {
-    "nombre": "Durango",
+    "Nombre": "Durango",
     "Arete": 185,
     "Edad": 7,
     "Peso": "480Kg",
@@ -9,12 +9,12 @@
     "Sexo": "Macho",
     "Fecha de Nacimiento": "2016-05-15",
     "Propietario": "Rancho Los Pinos",
-    "Ubicación": "Tenosique, Tabasco",
-    "imagen": "/images/durango.jpg",
+    "Ubicacion": "Tenosique, Tabasco",
+    "Imagen": "/images/durango.jpg",
     "vacunado": true
   },
   {
-    "nombre": "Betsy",
+    "Nombre": "Betsy",
     "Arete": 203,
     "Edad": 7,
     "Peso": "450Kg",
@@ -23,12 +23,12 @@
     "Sexo": "Hembra",
     "Fecha de Nacimiento": "2016-08-20",
     "Propietario": "Rancho Los Pinos",
-    "Ubicación": "Tenosique, Tabasco",
-    "imagen": "/images/betsy.jpg",
+    "Ubicacion": "Tenosique, Tabasco",
+    "Imagen": "/images/betsy.jpg",
     "vacunado": false
   },
   {
-    "nombre": "Toro",
+    "Nombre": "Toro",
     "Arete": 210,
     "Edad": 10,
     "Peso": "490Kg",
@@ -37,12 +37,12 @@
     "Sexo": "Macho",
     "Fecha de Nacimiento": "2013-03-10",
     "Propietario": "Rancho El Mirador",
-    "Ubicación": "Emiliano Zapata, Tabasco",
-    "imagen": "/images/toro.jpg",
+    "Ubicacion": "Emiliano Zapata, Tabasco",
+    "Imagen": "/images/toro.jpg",
     "vacunado": true
   },
   {
-    "nombre": "Luna",
+    "Nombre": "Luna",
     "Arete": 198,
     "Edad": 9,
     "Peso": "420Kg",
@@ -51,12 +51,12 @@
     "Sexo": "Hembra",
     "Fecha de Nacimiento": "2014-11-25",
     "Propietario": "Rancho El Mirador",
-    "Ubicación": "Emiliano Zapata, Tabasco",
-    "imagen": "/images/luna.jpg",
+    "Ubicacion": "Emiliano Zapata, Tabasco",
+    "Imagen": "/images/luna.jpg",
     "vacunado": false
   },
   {
-    "nombre": "Bruno",
+    "Nombre": "Bruno",
     "Arete": 215,
     "Edad": 10,
     "Peso": "470Kg",
@@ -65,12 +65,12 @@
     "Sexo": "Macho",
     "Fecha de Nacimiento": "2013-07-12",
     "Propietario": "Rancho Santa Fe",
-    "Ubicación": "Cárdenas, Tabasco",
-    "imagen": "/images/bruno.jpg",
+    "Ubicacion": "Cárdenas, Tabasco",
+    "Imagen": "/images/bruno.jpg",
     "vacunado": true
   },
   {
-    "nombre": "Rayo",
+    "Nombre": "Rayo",
     "Arete": 220,
     "Edad": 8,
     "Peso": "460Kg",
@@ -79,12 +79,12 @@
     "Sexo": "Macho",
     "Fecha de Nacimiento": "2015-09-18",
     "Propietario": "Rancho Santa Fe",
-    "Ubicación": "Cárdenas, Tabasco",
-    "imagen": "/images/rayo.jpg",
+    "Ubicacion": "Cárdenas, Tabasco",
+    "Imagen": "/images/rayo.jpg",
     "vacunado": false
   },
   {
-    "nombre": "Estrella",
+    "Nombre": "Estrella",
     "Arete": 225,
     "Edad": 6,
     "Peso": "430Kg",
@@ -93,12 +93,12 @@
     "Sexo": "Hembra",
     "Fecha de Nacimiento": "2017-04-22",
     "Propietario": "Finca San José",
-    "Ubicación": "Jalapa, Tabasco",
-    "imagen": "/images/estrella.jpg",
+    "Ubicacion": "Jalapa, Tabasco",
+    "Imagen": "/images/estrella.jpg",
     "vacunado": true
   },
   {
-    "nombre": "Cielo",
+    "Nombre": "Cielo",
     "Arete": 230,
     "Edad": 5,
     "Peso": "410Kg",
@@ -107,12 +107,12 @@
     "Sexo": "Hembra",
     "Fecha de Nacimiento": "2018-12-05",
     "Propietario": "Finca San José",
-    "Ubicación": "Jalapa, Tabasco",
-    "imagen": "/images/cielo.jpg",
+    "Ubicacion": "Jalapa, Tabasco",
+    "Imagen": "/images/cielo.jpg",
     "vacunado": false
   },
   {
-    "nombre": "Trueno",
+    "Nombre": "Trueno",
     "Arete": 235,
     "Edad": 4,
     "Peso": "400Kg",
@@ -121,12 +121,12 @@
     "Sexo": "Macho",
     "Fecha de Nacimiento": "2019-02-14",
     "Propietario": "Rancho Los Pinos",
-    "Ubicación": "Tenosique, Tabasco",
-    "imagen": "/images/trueno.jpg",
+    "Ubicacion": "Tenosique, Tabasco",
+    "Imagen": "/images/trueno.jpg",
     "vacunado": true
   },
   {
-    "nombre": "Nube",
+    "Nombre": "Nube",
     "Arete": 240,
     "Edad": 3,
     "Peso": "380Kg",
@@ -135,12 +135,12 @@
     "Sexo": "Hembra",
     "Fecha de Nacimiento": "2020-06-10",
     "Propietario": "Hacienda La Esperanza",
-    "Ubicación": "Balancán, Tabasco",
-    "imagen": "/images/nube.jpg",
+    "Ubicacion": "Balancán, Tabasco",
+    "Imagen": "/images/nube.jpg",
     "vacunado": false
   },
   {
-    "nombre": "Sol",
+    "Nombre": "Sol",
     "Arete": 245,
     "Edad": 2,
     "Peso": "350Kg",
@@ -149,12 +149,12 @@
     "Sexo": "Macho",
     "Fecha de Nacimiento": "2021-03-25",
     "Propietario": "Hacienda La Esperanza",
-    "Ubicación": "Balancán, Tabasco",
-    "imagen": "/images/sol.jpg",
+    "Ubicacion": "Balancán, Tabasco",
+    "Imagen": "/images/sol.jpg",
     "vacunado": true
   },
   {
-    "nombre": "Luna",
+    "Nombre": "Luna",
     "Arete": 250,
     "Edad": 1,
     "Peso": "300Kg",
@@ -163,8 +163,8 @@
     "Sexo": "Hembra",
     "Fecha de Nacimiento": "2022-08-15",
     "Propietario": "Finca San José",
-    "Ubicación": "Jalapa, Tabasco",
-    "imagen": "/images/luna2.jpg",
+    "Ubicacion": "Jalapa, Tabasco",
+    "Imagen": "/images/luna2.jpg",
     "vacunado": true
   }
 ]

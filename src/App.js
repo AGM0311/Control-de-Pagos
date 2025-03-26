@@ -1,6 +1,7 @@
 //import { Ejemplo01 } from "./components/ejemplos";
 import { BrowserRouter } from "react-router-dom";
 import { Rutas } from "./routes/Rutas";
+
 function App() {
   return (
     <BrowserRouter>

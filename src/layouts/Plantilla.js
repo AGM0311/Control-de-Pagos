@@ -1,9 +1,9 @@
-import React from 'react'
-import { Menu } from '../components/inicio'
+import React from 'react';
+import { Menu } from '../components/inicio';
 
 export function Plantilla({ children }) {
   return (
-    <div>
+    <div style={{ backgroundColor: '#d0d0d0', minHeight: '100vh' }}>
       {/* Menú lateral */}
       <div className='header'>
         <Menu />

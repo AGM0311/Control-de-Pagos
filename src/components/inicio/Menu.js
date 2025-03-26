@@ -7,20 +7,20 @@ export function Menu() {
       <nav className="d-flex flex-column bg-dark text-white p-3 vh-100" style={{ width: "200px", position: "fixed", top: 0, left: 0 }}>
         <h4 className="text-center">BARRA DE HERRAMIENTAS</h4>
         <Link className="nav-link text-white mt-3" to="/">
-          🏠 Home
+          Home
         </Link>
         <Link className="nav-link text-white mt-3" to="/catalogo">
-          🛍️ Catalogo
+          Catalogo
         </Link>
-        <Link className="nav-link text-white mt-3" to="/registroform">
-          📦 Registro
+        <Link className="nav-link text-white mt-3" to="/usuarios">
+          Usuarios
         </Link>
-        <span className="nav-link text-secondary mt-3" to="">
+        <Link className="nav-link text-white mt-3" to="/gestion">
            Gestion
-        </span>
-        <span className="nav-link text-secondary mt-3" to="">
+        </Link>
+        <Link className="nav-link text-white mt-3" to="/informe">
           Informe
-        </span>
+        </Link>
       </nav>
     </>
   );
