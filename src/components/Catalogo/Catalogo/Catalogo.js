@@ -1,6 +1,5 @@
 import React from 'react';
 import { RegistroForm } from '../../Formulario/RegistroForm';
-import "./Catalogo.scss";
 
 export function Catalogo() {
     

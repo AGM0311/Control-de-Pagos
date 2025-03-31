@@ -10,7 +10,7 @@ export function Plantilla({ children }) {
       </div>
 
       {/* Contenido principal con margen izquierdo */}
-      <div className='body' style={{ marginLeft: '200px', padding: '20px' }}>
+      <div className='body' style={{ marginLeft: '150px', padding: '10px' }}>
         {children}
       </div>
     </div>
