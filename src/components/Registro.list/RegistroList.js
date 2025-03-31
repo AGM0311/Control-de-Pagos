@@ -5,7 +5,6 @@ import { BASE_API, API_ROUTES } from '../../utils/constantes';
 import { MdDelete } from "react-icons/md";
 import { FiEdit } from "react-icons/fi";
 
-
 export function RegistroList({ handleEdit, handleDelete }) {
     const [ganado, setGanado] = useState([]);
 
@@ -23,55 +22,77 @@ export function RegistroList({ handleEdit, handleDelete }) {
     };
 
     return (
-        <div className="container mt-2 small">
-    <h3 className="text-center mb-2">Lista de Registros</h3>
-    <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-        <Table striped bordered hover responsive className="text-center table-sm" style={{ minWidth: '1000px' }}>
-            <thead className="table-dark">
-                <tr>
-                    <th>Nombre</th>
-                    <th>Arete</th>
-                    <th>Edad</th>
-                    <th>Peso (kg)</th>
-                    <th>Raza</th>
-                    <th>Color</th>
-                    <th>Sexo</th>
-                    <th>Propietario</th>
-                    <th>Ubicación</th>
-                    <th>Vacunado</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {ganado.map((animal, index) => (
-                    <tr key={animal.id || index}>
-                        <td>{animal.Nombre}</td>
-                        <td>{animal.Arete}</td>
-                        <td>{animal.Edad}</td>
-                        <td>{animal.Peso}</td>
-                        <td>{animal.Raza}</td>
-                        <td>{animal.Color}</td>
-                        <td>{animal.Sexo}</td>
-                        <td>{animal.Propietario}</td>
-                        <td>{animal.Ubicacion}</td>
-                        <td>
-                            <span className={`badge ${animal.vacunado ? 'bg-success' : 'bg-danger'}`}>
-                                {animal.vacunado ? 'SI' : 'NO'}
-                            </span>
-                        </td>
-                        <td>
-                            <Button variant="outline-danger" size="sm" onClick={() => handleDelete(animal.id)}>
-                                <MdDelete /> Eliminar
-                            </Button>
-                            <Button variant="outline-primary" size="sm" onClick={() => handleEdit(animal.id)}>
-                                <FiEdit /> Editar
-                            </Button>
-                        </td>
-                    </tr>
-                ))}
-            </tbody>
-        </Table>
-    </div>
-</div>
+        <div className="container mt-3">
+            <h3 className="text-center mb-3 fw-bold">Lista de Registros</h3>
+
+            <div style={{ maxHeight: '400px', overflowY: 'auto', overflowX: 'auto' }}>
+                <Table 
+                    striped 
+                    bordered 
+                    hover 
+                    responsive 
+                    className="text-center table-sm"
+                    style={{ borderRadius: '10px', overflow: 'hidden', boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)' }}
+                >
+                    <thead className="table-dark">
+                        <tr>
+                            <th style={{ width: "12%" }}>Nombre</th>
+                            <th style={{ width: "10%" }}>Arete</th>
+                            <th style={{ width: "8%" }}>Edad</th>
+                            <th style={{ width: "8%" }}>Peso (kg)</th>
+                            <th style={{ width: "10%" }}>Raza</th>
+                            <th style={{ width: "10%" }}>Color</th>
+                            <th style={{ width: "8%" }}>Sexo</th>
+                            <th style={{ width: "12%" }}>Propietario</th>
+                            <th style={{ width: "10%" }}>Ubicación</th>
+                            <th style={{ width: "8%" }}>Vacunado</th>
+                            <th style={{ width: "14%" }}>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {ganado.map((animal) => (
+                            <tr key={animal.id}>
+                                <td>{animal.Nombre}</td>
+                                <td>{animal.Arete}</td>
+                                <td>{animal.Edad}</td>
+                                <td>{animal.Peso}</td>
+                                <td>{animal.Raza}</td>
+                                <td>{animal.Color}</td>
+                                <td>{animal.Sexo}</td>
+                                <td>{animal.Propietario}</td>
+                                <td>{animal.Ubicacion}</td>
+                                <td>
+                                    <span 
+                                        className={`badge px-3 py-2 text-white ${animal.vacunado ? 'bg-success' : 'bg-danger'}`} 
+                                        style={{ borderRadius: '8px', fontSize: '0.9em' }}
+                                    >
+                                        {animal.vacunado ? ' Sí' : ' No'}
+                                    </span>
+                                </td>
+                                <td>
+                                    <Button 
+                                        variant="outline-danger" 
+                                        size="sm" 
+                                        className="me-2" 
+                                        style={{ borderRadius: '8px', fontWeight: 'bold' }}
+                                        onClick={() => handleDelete(animal.id)}
+                                    >
+                                        <MdDelete /> Eliminar
+                                    </Button>
+                                    <Button 
+                                        variant="outline-primary" 
+                                        size="sm" 
+                                        style={{ borderRadius: '8px', fontWeight: 'bold' }}
+                                        onClick={() => handleEdit(animal.id)}
+                                    >
+                                        <FiEdit /> Editar
+                                    </Button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </Table>
+            </div>
+        </div>
     );
 }
