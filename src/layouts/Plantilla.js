@@ -1,16 +1,16 @@
-import React from 'react'
-import { Menu } from '../components/inicio'
+import React from 'react';
+import { Menu } from '../components/inicio';
 
 export function Plantilla({ children }) {
   return (
-    <div>
+    <div style={{ backgroundColor: 'grey', minHeight: '100vh' }}>
       {/* Menú lateral */}
       <div className='header'>
         <Menu />
       </div>
 
       {/* Contenido principal con margen izquierdo */}
-      <div className='body' style={{ marginLeft: '200px', padding: '20px' }}>
+      <div className='body' style={{ marginLeft: '150px', padding: '10px' }}>
         {children}
       </div>
     </div>

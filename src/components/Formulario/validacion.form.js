@@ -1,14 +1,5 @@
 import * as YUP from 'yup';
 
-export function initialValues() {
-  return {
-    nombre: "",
-    arete: "",
-    peso: "",
-    edad: "",
-    imagen: null, // Cambiado a `null` para manejar archivos
-  };
-}
 
 export function validationSchema() {
   return YUP.object({
