@@ -18,7 +18,7 @@ export function RegistroForm() {
       sexo: '',
       fechaNacimiento: '',
       propietario: '',
-      ubicacion: '',
+      Ubicación: '',
       imagen: null,
       vacunado: false,
     },
@@ -150,7 +150,7 @@ export function RegistroForm() {
               placeholder="Ubicacion"
               name="ubicacion"
               onChange={formik.handleChange}
-              value={formik.values.ubicacion}
+              value={formik.values.Ubicación}
             />
           </Form.Group>
 

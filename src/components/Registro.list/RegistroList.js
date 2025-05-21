@@ -52,7 +52,7 @@ export function RegistroList({ handleEdit, handleDelete }) {
                     <tbody>
                         {ganado.map((animal) => (
                             <tr key={animal.id}>
-                                <td>{animal.Nombre}</td>
+                                <td>{animal.nombre}</td>
                                 <td>{animal.Arete}</td>
                                 <td>{animal.Edad}</td>
                                 <td>{animal.Peso}</td>
@@ -60,7 +60,7 @@ export function RegistroList({ handleEdit, handleDelete }) {
                                 <td>{animal.Color}</td>
                                 <td>{animal.Sexo}</td>
                                 <td>{animal.Propietario}</td>
-                                <td>{animal.Ubicacion}</td>
+                                <td>{animal.Ubicación}</td>
                                 <td>
                                     <span 
                                         className={`badge px-3 py-2 text-white ${animal.vacunado ? 'bg-success' : 'bg-danger'}`} 

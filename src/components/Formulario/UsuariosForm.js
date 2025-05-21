@@ -37,7 +37,7 @@ export function UsuariosForm({ handleEdit, handleDelete }) {
               <td>{trabajador.puesto}</td>
               <td>
                 <Button 
-                  variant="outline-danger" 
+                  variant="danger" 
                   size="medium" 
                   className="me-2"
                   onClick={() => handleDelete(trabajador.id)}
@@ -45,7 +45,7 @@ export function UsuariosForm({ handleEdit, handleDelete }) {
                   Eliminar
                 </Button>
                 <Button 
-                  variant="outline-primary" 
+                  variant="primary" 
                   size="medium" 
                   className="me-2"
                   onClick={() => handleEdit(trabajador.id)}
