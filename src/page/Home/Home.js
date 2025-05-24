@@ -30,8 +30,8 @@ export function Home() {
 
   // Procesar datos para la gráfica de razas
   const procesarDatosRazas = (ganado) => {
-    const razasContador = ganado.reduce((acc, { Raza }) => {
-      acc[Raza] = (acc[Raza] || 0) + 1;
+    const razasContador = ganado.reduce((acc, { raza }) => {
+      acc[raza] = (acc[raza] || 0) + 1;
       return acc;
     }, {});
 
