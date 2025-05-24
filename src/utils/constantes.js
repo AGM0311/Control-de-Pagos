@@ -1,25 +1,23 @@
-// constants.js
-
 const BASE_API = "http://localhost:3001"; // URL base del servidor
 
 const API_ROUTES = {
   TRABAJADORES: {
-    BASE: "/api/trabajadores",
+    PUT: "/api/trabajadores",
     GET: "/api/trabajadores",
     POST: "/api/trabajadores",
-    DELETE: "/api/trabajadores/:id",
+    DELETE: "/api/trabajadores",
   },
   GANADO: {
-    BASE: "/api/ganado",
     GET: "/api/ganado",
     POST: "/api/ganado",
-    DELETE: "/api/ganado/:id",
+    DELETE: "/api/ganado",
+    PUT: "/api/ganado",
   },
   EVENTOS: {
-    BASE: "/api/eventos",
     GET: "/api/eventos",
     POST: "/api/eventos",
-    DELETE: "/api/eventos/:id",
+    DELETE: "/api/eventos",
+    PUT: "/api/eventos",
   },
 };
 

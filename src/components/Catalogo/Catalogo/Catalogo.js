@@ -1,5 +1,6 @@
 import React from 'react';
-import { RegistroForm } from '../../Formulario/RegistroForm';
+import { Registro } from '../../Formulario/RegistroForm';
+
 
 export function Catalogo() {
     
@@ -12,7 +13,7 @@ export function Catalogo() {
     };
     return (
         <div className='container' style={fondo.tema}>
-            <RegistroForm />
+            <Registro />
             
         </div>
     );
