@@ -1,187 +1,180 @@
-import React, { useState } from 'react';
-import { Button, Form, Row, Col, InputGroup } from 'react-bootstrap';
-import { useFormik } from 'formik';
-import { RegistroList } from '../Registro.list';
-import { validationSchema } from './validacion.form'; // Asegúrate de que este archivo esté actualizado
+import React, { useState, useEffect } from 'react';
+import { Button, Form, Row, Col, InputGroup, Table } from 'react-bootstrap';
+import axios from 'axios';
+import { MdDelete } from "react-icons/md";
+import { FiEdit } from "react-icons/fi";
+import { BASE_API, API_ROUTES } from '../../utils/constantes';
 
-export function RegistroForm() {
-  const [informacion, setInformacion] = useState([]);
+export function Registro() {
+  const [ganado, setGanado] = useState([]);
+  const [modoEdicion, setModoEdicion] = useState(false);
+  const [animalEditandoId, setAnimalEditandoId] = useState(null);
 
-  const formik = useFormik({
-    initialValues: {
-      nombre: '',
-      arete: '',
-      edad: '',
-      peso: '',
-      raza: '',
-      color: '',
-      sexo: '',
-      fechaNacimiento: '',
-      propietario: '',
-      Ubicación: '',
-      imagen: null,
-      vacunado: false,
-    },
-    validationSchema: validationSchema(),
-    onSubmit: (formValue) => {
-      const newAnimal = {
-        ...formValue,
-        peso: `${formValue.peso}Kg`, // Aseguramos el formato "Kg"
-      };
-      setInformacion([...informacion, newAnimal]);
-      formik.resetForm();
-    },
+  const [formData, setFormData] = useState({
+    nombre: '', arete: 0, edad: 0, peso: 0, raza: '', color: '', sexo: '', propietario: '', ubicacion: '', vacunado: false
   });
+
+  const fetchGanado = async () => {
+    const res = await axios.get(`${BASE_API}${API_ROUTES.GANADO.GET}`);
+    console.log(res);
+    setGanado(res.data);
+  };
+
+  const handleSubmit = async e => {
+    e.preventDefault();
+
+    if (modoEdicion) {
+      await axios.put(`${BASE_API}${API_ROUTES.GANADO.PUT}/${animalEditandoId}`, formData);
+    } else {
+      await axios.post(`${BASE_API}${API_ROUTES.GANADO.POST}`, formData);
+    }
+
+    setFormData({ nombre: '', arete: 0, edad: 0, peso: 0, raza: '', color: '', sexo: '', propietario: '', ubicacion: '', vacunado: false });
+    setModoEdicion(false);
+    setAnimalEditandoId(null);
+    fetchGanado();
+  };
+
+  const handleEdit = animal => {
+    setFormData({
+      nombre: animal.nombre || '',
+      arete: animal.arete || 0,
+      edad: animal.edad || 0,
+      peso: animal.peso || 0,
+      raza: animal.raza || '',
+      color: animal.color || '',
+      sexo: animal.sexo || '',
+      propietario: animal.propietario || '',
+      ubicacion: animal.ubicacion || '',
+      vacunado: animal.vacunado || false,
+    });
+
+    
+    setModoEdicion(true);
+    setAnimalEditandoId(animal._id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDelete = async id => {
+    await axios.delete(`${BASE_API}${API_ROUTES.GANADO.DELETE}/${id}`);
+    fetchGanado();
+  };
+
+  const handleCancelar = () => {
+    setFormData({
+      nombre: '', arete: 0, edad: 0, peso: 0, raza: '', color: '', sexo: '', propietario: '', ubicacion: '', vacunado: false
+    });
+    setModoEdicion(false);
+    setAnimalEditandoId(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  useEffect(() => { fetchGanado(); }, []);
 
   return (
     <div className="p-4">
-      <Form onSubmit={formik.handleSubmit}>
+      <h3 className="fw-bold mb-4 text-center">{modoEdicion ? 'Editar Animal' : 'Registrar Animal'}</h3>
+
+      <Form onSubmit={handleSubmit}>
         <Row className="mb-3">
-          <Form.Group as={Col} md="3">
+          <Col md="3">
             <Form.Label>Nombre</Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="Nombre"
-              name="nombre"
-              onChange={formik.handleChange}
-              value={formik.values.nombre}
-            />
-          </Form.Group>
+            <Form.Control type="text" value={formData.nombre} onChange={e => setFormData({ ...formData, nombre: e.target.value })} />
+          </Col>
 
-          <Form.Group as={Col} md="3">
+          <Col md="3">
             <Form.Label>Arete</Form.Label>
-            <Form.Control
-              type="number"
-              placeholder="Arete"
-              name="arete"
-              onChange={(e) => formik.setFieldValue("arete", Number(e.target.value))}
-              value={formik.values.arete}
-            />
-          </Form.Group>
+            <Form.Control type="number" value={formData.arete} onChange={e => setFormData({ ...formData, arete: Number(e.target.value) })} />
+          </Col>
 
-          <Form.Group as={Col} md="3">
-            <Form.Label>Peso</Form.Label>
+          <Col md="3">
+            <Form.Label>Peso (kg)</Form.Label>
             <InputGroup>
-              <Form.Control
-                type="number"
-                placeholder="Peso"
-                name="peso"
-                onChange={(e) => formik.setFieldValue("peso", e.target.value)}
-                value={formik.values.peso}
-              />
+              <Form.Control type="number" value={formData.peso} onChange={e => setFormData({ ...formData, peso: Number(e.target.value) })} />
+              <InputGroup.Text>kg</InputGroup.Text>
             </InputGroup>
-          </Form.Group>
+          </Col>
         </Row>
 
         <Row className="mb-3">
-          <Form.Group as={Col} md="3">
+          <Col md="3">
             <Form.Label>Edad</Form.Label>
-            <Form.Control
-              type="number"
-              placeholder="Edad"
-              name="edad"
-              onChange={(e) => formik.setFieldValue("edad", Number(e.target.value))}
-              value={formik.values.edad}
-            />
-          </Form.Group>
+            <Form.Control type="number" value={formData.edad} onChange={e => setFormData({ ...formData, edad: Number(e.target.value) })} />
+          </Col>
 
-          <Form.Group as={Col} md="3">
+          <Col md="3">
             <Form.Label>Raza</Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="Raza"
-              name="raza"
-              onChange={formik.handleChange}
-              value={formik.values.raza}
-            />
-          </Form.Group>
+            <Form.Control type="text" value={formData.raza} onChange={e => setFormData({ ...formData, raza: e.target.value })} />
+          </Col>
 
-          <Form.Group as={Col} md="3">
+          <Col md="3">
             <Form.Label>Color</Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="Color"
-              name="color"
-              onChange={formik.handleChange}
-              value={formik.values.color}
-            />
-          </Form.Group>
+            <Form.Control type="text" value={formData.color} onChange={e => setFormData({ ...formData, color: e.target.value })} />
+          </Col>
         </Row>
 
         <Row className="mb-3">
-          <Form.Group as={Col} md="3">
+          <Col md="3">
             <Form.Label>Sexo</Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="Sexo"
-              name="sexo"
-              onChange={formik.handleChange}
-              value={formik.values.sexo}
-            />
-          </Form.Group>
+            <Form.Select value={formData.sexo} onChange={e => setFormData({ ...formData, sexo: e.target.value })}>
+              <option value="">Seleccionar...</option>
+              <option value="Macho">Macho</option>
+              <option value="Hembra">Hembra</option>
+            </Form.Select>
+          </Col>
 
-          <Form.Group as={Col} md="3">
-            <Form.Label>Fecha de Nacimiento</Form.Label>
-            <Form.Control
-              type="date"
-              name="fechaNacimiento"
-              onChange={formik.handleChange}
-              value={formik.values.fechaNacimiento}
-            />
-          </Form.Group>
-
-          <Form.Group as={Col} md="3">
+          <Col md="3">
             <Form.Label>Propietario</Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="Propietario"
-              name="propietario"
-              onChange={formik.handleChange}
-              value={formik.values.propietario}
-            />
-          </Form.Group>
+            <Form.Control type="text" value={formData.propietario} onChange={e => setFormData({ ...formData, propietario: e.target.value })} />
+          </Col>
+
+          <Col md="3">
+            <Form.Label>Ubicación</Form.Label>
+            <Form.Control type="text" value={formData.ubicacion} onChange={e => setFormData({ ...formData, ubicacion: e.target.value })} />
+          </Col>
         </Row>
 
         <Row className="mb-3">
-          <Form.Group as={Col} md="3">
-            <Form.Label>Ubicacion</Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="Ubicacion"
-              name="ubicacion"
-              onChange={formik.handleChange}
-              value={formik.values.Ubicación}
-            />
-          </Form.Group>
-
-          <Form.Group as={Col} md="3">
-            <Form.Label>Imagen</Form.Label>
-            <Form.Control
-              type="file"
-              name="imagen"
-              onChange={(e) => formik.setFieldValue("imagen", e.target.files[0])}
-            />
-          </Form.Group>
+          <Col md="3" className="d-flex align-items-center">
+            <Form.Check type="checkbox" label="Vacunado" checked={formData.vacunado} onChange={e => setFormData({ ...formData, vacunado: e.target.checked })} />
+          </Col>
         </Row>
 
         <Row className="mb-3">
-          <Form.Group as={Col} md="3">
-            <Form.Check
-              type="checkbox"
-              label="Vacunado"
-              name="vacunado"
-              onChange={formik.handleChange}
-              checked={formik.values.vacunado}
-            />
-          </Form.Group>
+          <Button type="submit">{modoEdicion ? 'Actualizar' : 'Registrar'}</Button>
+          {modoEdicion && (
+            <Button variant="secondary" onClick={handleCancelar} className="ms-2">
+              Cancelar
+            </Button>
+          )}
         </Row>
-
-        <Button type="submit">Agregar Animal</Button>
       </Form>
 
-      <Row className="mt-4">
-        <RegistroList datos={informacion} />
-      </Row>
+      <hr />
+
+      <Table striped bordered hover>
+        <thead>
+          <tr>
+            <th>Nombre</th><th>Arete</th><th>Raza</th><th>Sexo</th><th>Peso</th><th>Edad</th><th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {ganado.map(animal => (
+            <tr key={animal._id}>
+              <td>{animal.nombre}</td>
+              <td>{animal.arete}</td>
+              <td>{animal.raza}</td>
+              <td>{animal.sexo}</td>
+              <td>{animal.peso}</td>
+              <td>{animal.edad}</td>
+              <td>
+                <Button variant="warning" onClick={() => handleEdit(animal)}><FiEdit /></Button>{' '}
+                <Button variant="danger" onClick={() => handleDelete(animal._id)}><MdDelete /></Button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
     </div>
   );
 }
