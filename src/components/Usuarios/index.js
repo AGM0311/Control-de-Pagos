@@ -1,1 +1,1 @@
-export * from "./Usuarios"
+export { Registro as Clientes } from "./Usuarios";
