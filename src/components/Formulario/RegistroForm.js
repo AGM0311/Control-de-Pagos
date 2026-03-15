@@ -7,8 +7,8 @@ import { BASE_API } from '../../utils/constantes';
 
 export function Registro() {
   const [clientes, setClientes] = useState([]);
+  const [alertas, setAlertas] = useState([]);
   const [modoEdicion, setModoEdicion] = useState(false);
-
   const [formData, setFormData] = useState({
     id: null,
     nombre: '',
@@ -18,7 +18,7 @@ export function Registro() {
     precio: 0,
     fechaCorte: 1,
     estado: 'activo',
-    pagos: [] // aseguramos que siempre exista
+    pagos: []
   });
 
   // Obtener clientes
@@ -32,25 +32,32 @@ export function Registro() {
     }
   };
 
+  // Obtener alertas
+  const fetchAlertas = async () => {
+    try {
+      const res = await axios.get(`${BASE_API}/alertas`);
+      setAlertas(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      console.error("Error al obtener alertas:", error);
+      setAlertas([]);
+    }
+  };
+
   useEffect(() => {
     fetchClientes();
+    fetchAlertas();
   }, []);
 
-  // Guardar o actualizar cliente
   const handleSubmit = async e => {
     e.preventDefault();
     try {
       if (modoEdicion && formData.id) {
-        // Editar cliente existente
         await axios.put(`${BASE_API}/clientes/${formData.id}`, formData);
       } else {
-        // Crear nuevo cliente
         const dataToSend = { ...formData };
-        delete dataToSend.id; // no enviar id al crear
+        delete dataToSend.id;
         await axios.post(`${BASE_API}/clientes`, dataToSend);
       }
-
-      // Reiniciar formulario
       setFormData({
         id: null,
         nombre: '',
@@ -63,8 +70,6 @@ export function Registro() {
         pagos: []
       });
       setModoEdicion(false);
-
-      // Refrescar lista
       fetchClientes();
     } catch (error) {
       console.error("Error al guardar cliente:", error.response?.data || error.message);
@@ -72,17 +77,7 @@ export function Registro() {
   };
 
   const handleEdit = cliente => {
-    setFormData({
-      id: cliente.id || null,
-      nombre: cliente.nombre || '',
-      telefono: cliente.telefono || '',
-      ip: cliente.ip || '',
-      plan: cliente.plan || '',
-      precio: cliente.precio || 0,
-      fechaCorte: cliente.fechaCorte || 1,
-      estado: cliente.estado || 'activo',
-      pagos: cliente.pagos || []
-    });
+    setFormData({ ...cliente });
     setModoEdicion(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -110,6 +105,20 @@ export function Registro() {
     });
     setModoEdicion(false);
   };
+
+  // Función para calcular próximo pago y días faltantes
+  const calcularPagoProximo = (cliente) => {
+    const hoy = new Date();
+    let fechaVencimiento = new Date(hoy.getFullYear(), hoy.getMonth(), cliente.fechaCorte);
+    if (fechaVencimiento < hoy) fechaVencimiento.setMonth(fechaVencimiento.getMonth() + 1);
+    const diffDias = Math.ceil((fechaVencimiento - hoy)/(1000*60*60*24));
+    return { fechaVencimiento, diffDias };
+  };
+
+  // Ordenar clientes por próximo pago
+  const clientesOrdenados = clientes
+    .map(c => ({ ...c, pagoProximo: calcularPagoProximo(c) }))
+    .sort((a, b) => a.pagoProximo.diffDias - b.pagoProximo.diffDias);
 
   return (
     <div className="p-4">
@@ -206,26 +215,45 @@ export function Registro() {
             <th>Plan</th>
             <th>Precio</th>
             <th>Corte</th>
-            <th>Estado</th>
+            <th>Días faltantes</th>
+            <th>Alertas</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
-          {Array.isArray(clientes) && clientes.map(cliente => (
-            <tr key={cliente.id}>
-              <td>{cliente.nombre}</td>
-              <td>{cliente.telefono}</td>
-              <td>{cliente.ip}</td>
-              <td>{cliente.plan}</td>
-              <td>${cliente.precio}</td>
-              <td>{cliente.fechaCorte}</td>
-              <td>{cliente.estado}</td>
-              <td>
-                <Button variant="warning" onClick={() => handleEdit(cliente)}><FiEdit /></Button>{' '}
-                <Button variant="danger" onClick={() => handleDelete(cliente.id)}><MdDelete /></Button>
-              </td>
-            </tr>
-          ))}
+          {clientesOrdenados.map(cliente => {
+            const { fechaVencimiento, diffDias } = cliente.pagoProximo;
+            const alertasCliente = alertas.filter(a => a.clienteId === cliente.id);
+
+            let bgColor = "transparent";
+            if (diffDias <= 3) bgColor = "#f8d7da"; // rojo urgente
+            else if (diffDias <= 7) bgColor = "#fff3cd"; // amarillo próximo
+
+            return (
+              <tr key={cliente.id} style={{ backgroundColor: bgColor }}>
+                <td>{cliente.nombre}</td>
+                <td>{cliente.telefono}</td>
+                <td>{cliente.ip}</td>
+                <td>{cliente.plan}</td>
+                <td>${cliente.precio}</td>
+                <td>{cliente.fechaCorte}</td>
+                <td>{diffDias}</td>
+                <td>
+                  {alertasCliente.length > 0 ? (
+                    <ul className="mb-0">
+                      {alertasCliente.map(a => <li key={a.id}>{a.mensaje}</li>)}
+                    </ul>
+                  ) : (
+                    <span>Sin alertas</span>
+                  )}
+                </td>
+                <td>
+                  <Button variant="warning" onClick={() => handleEdit(cliente)}><FiEdit /></Button>{' '}
+                  <Button variant="danger" onClick={() => handleDelete(cliente.id)}><MdDelete /></Button>
+                </td>
+              </tr>
+            )
+          })}
         </tbody>
       </Table>
     </div>

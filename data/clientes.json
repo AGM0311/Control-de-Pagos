@@ -4,9 +4,69 @@
     "nombre": "AXL",
     "telefono": "57753",
     "ip": "43",
-    "plan": "MENE",
+    "plan": "mensual",
     "precio": 1,
     "fechaCorte": 1,
+    "estado": "activo",
+    "pagos": [
+      {
+        "fecha": "2026-03-10",
+        "monto": 400,
+        "metodo": "nroma"
+      },
+      {
+        "fecha": "2026-02-13",
+        "monto": 400,
+        "metodo": "Efectivo"
+      }
+    ],
+    "pagoProximo": {
+      "fechaVencimiento": "2026-04-01T06:00:00.000Z",
+      "diffDias": 17
+    }
+  },
+  {
+    "id": "1773597080029",
+    "nombre": "axxl",
+    "telefono": "23323",
+    "ip": "434",
+    "plan": "sdsd",
+    "precio": 633,
+    "fechaCorte": 1,
+    "estado": "activo",
+    "pagos": [
+      {
+        "fecha": "2026-03-11",
+        "monto": 400,
+        "metodo": "Efectivo"
+      }
+    ]
+  },
+  {
+    "id": "1773599904119",
+    "nombre": "viki",
+    "telefono": "343434",
+    "ip": "3",
+    "plan": "mensual",
+    "precio": 2,
+    "fechaCorte": 11,
+    "estado": "activo",
+    "pagos": [
+      {
+        "fecha": "2026-02-04",
+        "monto": 400,
+        "metodo": "Efectivo"
+      }
+    ]
+  },
+  {
+    "id": "1773600262433",
+    "nombre": "sas",
+    "telefono": "344",
+    "ip": "44",
+    "plan": "",
+    "precio": 400,
+    "fechaCorte": 16,
     "estado": "activo",
     "pagos": []
   }
