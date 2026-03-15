@@ -1,205 +1,141 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const { ObjectId } = require('mongodb');
-const { connectToDatabase, getDb } = require('./src/db/connection');
+const express = require("express");
+const cors = require("cors");
+const fs = require("fs");
 
 const app = express();
-const port = process.env.PORT || 3001;
+const PORT = 3001;
 
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
-}));
+app.use(cors());
 app.use(express.json());
 
-app.use((req, res, next) => {
+// ======================
+// ARCHIVOS DE DATOS
+// ======================
+const FILE_CLIENTES = "./data/clientes.json";
+const FILE_ALERTAS = "./data/alertas.json";
+
+// ======================
+// FUNCIONES AUXILIARES
+// ======================
+function readData(file) {
   try {
-    getDb();
-    next();
-  } catch (err) {
-    res.status(500).json({ message: 'Error con la base de datos', error: err.message });
+    if (!fs.existsSync(file)) {
+      fs.writeFileSync(file, "[]");
+      return [];
+    }
+
+    const data = JSON.parse(fs.readFileSync(file));
+
+    // Validación: si no es array, lo reiniciamos
+    if (!Array.isArray(data)) {
+      fs.writeFileSync(file, "[]");
+      return [];
+    }
+
+    return data;
+  } catch (error) {
+    // Si JSON corrupto, reiniciamos
+    fs.writeFileSync(file, "[]");
+    return [];
   }
+}
+
+function writeData(file, data) {
+  fs.writeFileSync(file, JSON.stringify(data, null, 2));
+}
+
+// =========================
+// RUTAS CLIENTES
+// =========================
+app.get("/clientes", (req, res) => {
+  const clientes = readData(FILE_CLIENTES);
+  res.json(clientes);
 });
 
-const isValidId = id => ObjectId.isValid(id);
+app.post("/clientes", (req, res) => {
+  const clientes = readData(FILE_CLIENTES);
 
+  const nuevoCliente = {
+    id: Date.now().toString(),
+    nombre: req.body.nombre || "",
+    telefono: req.body.telefono || "",
+    ip: req.body.ip || "",
+    plan: req.body.plan || "",
+    precio: req.body.precio || 0,
+    fechaCorte: req.body.fechaCorte || 1,
+    estado: req.body.estado || "activo",
+    pagos: []
+  };
 
+  clientes.push(nuevoCliente);
+  writeData(FILE_CLIENTES, clientes);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// GANADO ________________________________________________________________________________________________________________
-app.get('/api/ganado', async (req, res) => {
-  try {
-    const db = getDb();
-    const datos = await db.collection('ganado').find().toArray();
-    res.json(datos);
-  } catch (err) {
-    res.status(500).json({ message: 'Error al obtener ganado', error: err.message });
-  }
+  res.json(nuevoCliente);
 });
 
-app.post('/api/ganado', async (req, res) => {
-  const datos = req.body;
-  if (!datos.nombre || !datos.arete) return res.status(400).json({ message: 'Faltan datos requeridos' });
-
-  try {
-    const db = getDb();
-    const result = await db.collection('ganado').insertOne(datos);
-    res.status(201).json({ ...datos, _id: result.insertedId });
-  } catch (err) {
-    res.status(500).json({ message: 'Error al guardar ganado', error: err.message });
-  }
-});
-
-app.delete('/api/ganado/:id', async (req, res) => {
+app.put("/clientes/:id", (req, res) => {
+  const clientes = readData(FILE_CLIENTES);
   const { id } = req.params;
-  if (!isValidId(id)) return res.status(400).json({ message: 'ID no válido' });
 
-  try {
-    const db = getDb();
-    const result = await db.collection('ganado').deleteOne({ _id: new ObjectId(id) });
-    if (result.deletedCount === 0) return res.status(404).json({ message: 'Ganado no encontrado' });
-    res.json({ message: 'Ganado eliminado' });
-  } catch (err) {
-    res.status(500).json({ message: 'Error al eliminar ganado', error: err.message });
-  }
+  const index = clientes.findIndex(c => c.id === id);
+  if (index === -1) return res.status(404).json({ mensaje: "Cliente no encontrado" });
+
+  clientes[index] = { ...clientes[index], ...req.body };
+  writeData(FILE_CLIENTES, clientes);
+
+  res.json(clientes[index]);
 });
 
-app.put('/api/ganado/:id', async (req, res) => {
+app.delete("/clientes/:id", (req, res) => {
+  const clientes = readData(FILE_CLIENTES);
+  const nuevosClientes = clientes.filter(c => c.id !== req.params.id);
+  writeData(FILE_CLIENTES, nuevosClientes);
+  res.json({ mensaje: "Cliente eliminado" });
+});
+
+// =========================
+// RUTA PAGOS
+// =========================
+app.post("/pago/:id", (req, res) => {
+  const clientes = readData(FILE_CLIENTES);
   const { id } = req.params;
-  const actualizados = req.body;
 
-  if (!isValidId(id)) return res.status(400).json({ message: 'ID no válido' });
-  if (!actualizados.nombre || !actualizados.arete) return res.status(400).json({ message: 'Faltan datos requeridos' });
+  const cliente = clientes.find(c => c.id === id);
+  if (!cliente) return res.status(404).json({ mensaje: "Cliente no encontrado" });
 
-  if (actualizados.peso) actualizados.peso = parseFloat(actualizados.peso);
+  const nuevoPago = {
+    fecha: req.body.fecha,
+    monto: req.body.monto
+  };
 
-  try {
-    const db = getDb();
-    const result = await db.collection('ganado').updateOne(
-      { _id: new ObjectId(id) },
-      { $set: actualizados }
-    );
-    if (result.matchedCount === 0) return res.status(404).json({ message: 'Ganado no encontrado' });
-    res.json({ message: 'Ganado actualizado' });
-  } catch (err) {
-    res.status(500).json({ message: 'Error al actualizar ganado', error: err.message });
-  }
+  // Asegurarnos que pagos sea un array
+  if (!Array.isArray(cliente.pagos)) cliente.pagos = [];
+
+  cliente.pagos.push(nuevoPago);
+  writeData(FILE_CLIENTES, clientes);
+
+  res.json(cliente);
 });
 
-
-
-
-
-
-
-
-
-
-// TRABAJADORES ________________________________________________________________________________________________________________
-app.get('/api/trabajadores', async (req, res) => {
-  try {
-    const db = getDb();
-    const datos = await db.collection('trabajadores').find().toArray();
-    res.json(datos);
-  } catch (err) {
-    res.status(500).json({ message: 'Error al obtener trabajadores', error: err.message });
-  }
+// =========================
+// RUTAS ALERTAS
+// =========================
+app.get("/alertas", (req, res) => {
+  const alertas = readData(FILE_ALERTAS);
+  res.json(alertas);
 });
 
-app.post('/api/trabajadores', async (req, res) => {
-  const datos = req.body;
-  if (!datos.nombre || !datos.puesto) 
-    return res.status(400).json({ message: 'Faltan datos requeridos: nombre y puesto' });
-
-  try {
-    const db = getDb();
-    const result = await db.collection('trabajadores').insertOne(datos);
-    res.status(201).json({ ...datos, _id: result.insertedId });
-  } catch (err) {
-    res.status(500).json({ message: 'Error al guardar trabajador', error: err.message });
-  }
+app.post("/alertas", (req, res) => {
+  const alertas = readData(FILE_ALERTAS);
+  const nuevaAlerta = { id: Date.now().toString(), ...req.body };
+  alertas.push(nuevaAlerta);
+  writeData(FILE_ALERTAS, alertas);
+  res.json(nuevaAlerta);
 });
 
-app.delete('/api/trabajadores/:id', async (req, res) => {
-  const { id } = req.params;
-  if (!isValidId(id)) return res.status(400).json({ message: 'ID no válido' });
-
-  try {
-    const db = getDb();
-    const result = await db.collection('trabajadores').deleteOne({ _id: new ObjectId(id) });
-    if (result.deletedCount === 0) return res.status(404).json({ message: 'Trabajador no encontrado' });
-    res.json({ message: 'Trabajador eliminado' });
-  } catch (err) {
-    res.status(500).json({ message: 'Error al eliminar trabajador', error: err.message });
-  }
+// =========================
+// SERVIDOR
+// =========================
+app.listen(PORT, () => {
+  console.log("Servidor corriendo en puerto " + PORT);
 });
-
-app.put('/api/trabajadores/:id', async (req, res) => {
-  const { id } = req.params;
-  const actualizados = req.body;
-
-  if (!isValidId(id)) return res.status(400).json({ message: 'ID no válido' });
-  if (!actualizados.nombre || !actualizados.puesto) 
-    return res.status(400).json({ message: 'Faltan datos requeridos: nombre y puesto' });
-
-  try {
-    const db = getDb();
-    const result = await db.collection('trabajadores').updateOne(
-      { _id: new ObjectId(id) },
-      { $set: actualizados }
-    );
-    if (result.matchedCount === 0) return res.status(404).json({ message: 'Trabajador no encontrado' });
-    res.json({ message: 'Trabajador actualizado' });
-  } catch (err) {
-    res.status(500).json({ message: 'Error al actualizar trabajador', error: err.message });
-  }
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// 404 para rutas no encontradas
-app.use((req, res) => res.status(404).json({ message: 'Ruta no encontrada' }));
-
-
-// Conexión y arranque
-connectToDatabase()
-  .then(() => {
-    console.log('Conexión a MongoDB establecida');
-    app.listen(port, () => {
-      console.log(`Servidor activo en puerto ${port}`);
-    });
-  })
-  .catch(err => {
-    console.error('No se pudo iniciar la aplicación:', err);
-    process.exit(1);
-  });

@@ -1,24 +1,13 @@
-const BASE_API = "http://localhost:3001"; // URL base del servidor
+export const BASE_API = "http://localhost:3001";
 
-const API_ROUTES = {
-  TRABAJADORES: {
-    PUT: "/api/trabajadores",
-    GET: "/api/trabajadores",
-    POST: "/api/trabajadores",
-    DELETE: "/api/trabajadores",
+export const API_ROUTES = {
+  CLIENTES: {
+    GET: "/clientes",
+    POST: "/clientes",
+    PUT: "/clientes",
+    DELETE: "/clientes"
   },
-  GANADO: {
-    GET: "/api/ganado",
-    POST: "/api/ganado",
-    DELETE: "/api/ganado",
-    PUT: "/api/ganado",
-  },
-  EVENTOS: {
-    GET: "/api/eventos",
-    POST: "/api/eventos",
-    DELETE: "/api/eventos",
-    PUT: "/api/eventos",
-  },
+  PAGOS: {
+    POST: "/pago"
+  }
 };
-
-module.exports = { BASE_API, API_ROUTES };

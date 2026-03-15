@@ -1,167 +1,137 @@
-import React, { useState, useEffect } from 'react';
-import { Button, Form, Row, Col, Table, Container } from 'react-bootstrap';
-import axios from 'axios';
-import { MdDelete } from "react-icons/md";
-import { FiEdit } from "react-icons/fi";
-import { BASE_API, API_ROUTES } from '../../utils/constantes';
+import React, { useEffect, useState } from "react";
+import { Card, Row, Col, Table } from "react-bootstrap";
+import axios from "axios";
+import { BASE_API } from "../../utils/constantes";
 
-export function UsuariosForm() {
-  // Estado para la lista de trabajadores
-  const [trabajadores, setTrabajadores] = useState([]);
-  const [modoEdicion, setModoEdicion] = useState(false);
-  const [trabajadorEditandoId, setTrabajadorEditandoId] = useState(null);
+export function Informe(){
 
-  // Estado para datos del formulario
-  const [formData, setFormData] = useState({
-    nombre: '',
-    puesto: '',
-    // agrega aquí otros campos que tenga un trabajador si aplica
-  });
+ const [clientes,setClientes] = useState([]);
+ const [alertas,setAlertas] = useState({vencidos:[],porVencer:[]});
 
-  // Función para obtener los trabajadores desde el backend
-  const fetchTrabajadores = async () => {
-    try {
-      const res = await axios.get(`${BASE_API}${API_ROUTES.TRABAJADORES.GET}`);
-      setTrabajadores(res.data);
-    } catch (error) {
-      console.error('Error al obtener los trabajadores:', error);
+ const fetchClientes = async () => {
+  const res = await axios.get(`${BASE_API}/clientes`);
+  setClientes(res.data);
+ };
+
+ const fetchAlertas = async () => {
+  const res = await axios.get(`${BASE_API}/alertas`);
+  setAlertas(res.data);
+ };
+
+ useEffect(()=>{
+  fetchClientes();
+  fetchAlertas();
+ },[]);
+
+ const totalClientes = clientes.length;
+
+ const activos = clientes.filter(c=>c.estado==="activo").length;
+
+ const vencidos = alertas.vencidos.length;
+
+ let ingresosMes = 0;
+
+ clientes.forEach(c=>{
+  if(c.pagos){
+   c.pagos.forEach(p=>{
+    const fecha = new Date(p.fecha);
+    const hoy = new Date();
+
+    if(
+     fecha.getMonth() === hoy.getMonth() &&
+     fecha.getFullYear() === hoy.getFullYear()
+    ){
+     ingresosMes += p.monto;
     }
-  };
 
-  // Maneja el envío del formulario (creación o actualización)
-  const handleSubmit = async e => {
-    e.preventDefault();
+   });
+  }
+ });
 
-    try {
-      if (modoEdicion) {
-        // Actualizar trabajador existente
-        await axios.put(`${BASE_API}${API_ROUTES.TRABAJADORES.PUT}/${trabajadorEditandoId}`, formData);
-      } else {
-        // Crear nuevo trabajador
-        await axios.post(`${BASE_API}${API_ROUTES.TRABAJADORES.POST}`, formData);
-      }
+ return(
 
-      // Limpiar formulario y estados de edición
-      setFormData({ nombre: '', puesto: '' });
-      setModoEdicion(false);
-      setTrabajadorEditandoId(null);
+  <div className="p-4">
 
-      // Refrescar la lista
-      fetchTrabajadores();
+   <h2 className="mb-4">Informe</h2>
 
-    } catch (error) {
-      console.error('Error al guardar trabajador:', error);
-    }
-  };
+   <Row className="mb-4">
 
-  // Cargar datos del trabajador en el formulario para editar
-  const handleEdit = trabajador => {
-    setFormData({
-      nombre: trabajador.nombre || '',
-      puesto: trabajador.puesto || '',
-      // otros campos si existen
-    });
-    setModoEdicion(true);
-    setTrabajadorEditandoId(trabajador._id);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+    <Col md={3}>
+     <Card bg="primary" text="white">
+      <Card.Body>
+       <Card.Title>Total Clientes</Card.Title>
+       <h3>{totalClientes}</h3>
+      </Card.Body>
+     </Card>
+    </Col>
 
-  // Eliminar trabajador
-  const handleDelete = async id => {
-    try {
-      await axios.delete(`${BASE_API}${API_ROUTES.TRABAJADORES.DELETE}/${id}`);
-      fetchTrabajadores();
-    } catch (error) {
-      console.error('Error al eliminar trabajador:', error);
-    }
-  };
+    <Col md={3}>
+     <Card bg="success" text="white">
+      <Card.Body>
+       <Card.Title>Activos</Card.Title>
+       <h3>{activos}</h3>
+      </Card.Body>
+     </Card>
+    </Col>
 
-  // Cancelar edición y limpiar formulario
-  const handleCancelar = () => {
-    setFormData({ nombre: '', puesto: '' });
-    setModoEdicion(false);
-    setTrabajadorEditandoId(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+    <Col md={3}>
+     <Card bg="danger" text="white">
+      <Card.Body>
+       <Card.Title>Vencidos</Card.Title>
+       <h3>{vencidos}</h3>
+      </Card.Body>
+     </Card>
+    </Col>
 
-  useEffect(() => {
-    fetchTrabajadores();
-  }, []);
+    <Col md={3}>
+     <Card bg="warning">
+      <Card.Body>
+       <Card.Title>Ingresos del mes</Card.Title>
+       <h3>${ingresosMes}</h3>
+      </Card.Body>
+     </Card>
+    </Col>
 
-  return (
-    <Container className="mt-4">
-      <h3 className="fw-bold mb-4 text-center">{modoEdicion ? 'Editar Trabajador' : 'Registrar Trabajador'}</h3>
+   </Row>
 
-      <Form onSubmit={handleSubmit}>
-        <Row className="mb-3">
-          <Col md="6">
-            <Form.Label>Nombre</Form.Label>
-            <Form.Control
-              type="text"
-              value={formData.nombre}
-              onChange={e => setFormData({ ...formData, nombre: e.target.value })}
-              required
-            />
-          </Col>
+   <Card>
 
-          <Col md="6">
-            <Form.Label>Puesto</Form.Label>
-            <Form.Control
-              type="text"
-              value={formData.puesto}
-              onChange={e => setFormData({ ...formData, puesto: e.target.value })}
-              required
-            />
-          </Col>
-        </Row>
+    <Card.Body>
 
-        <Row className="mb-3">
-          <Button type="submit">{modoEdicion ? 'Actualizar' : 'Registrar'}</Button>
-          {modoEdicion && (
-            <Button variant="secondary" onClick={handleCancelar} className="ms-2">
-              Cancelar
-            </Button>
-          )}
-        </Row>
-      </Form>
+     <Card.Title>Clientes por vencer</Card.Title>
 
-      <hr />
+     <Table striped bordered>
 
-      <Table striped bordered hover responsive className="text-center shadow-sm">
-        <thead className="table-dark">
-          <tr>
-            <th>Nombre</th>
-            <th>Puesto</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {trabajadores.map(trabajador => (
-            <tr key={trabajador._id}>
-              <td>{trabajador.nombre}</td>
-              <td>{trabajador.puesto}</td>
-              <td>
-                <Button 
-                  variant="danger" 
-                  size="medium" 
-                  className="me-2"
-                  onClick={() => handleEdit(trabajador)}
-                >
-                  <FiEdit />
-                </Button>
-                <Button 
-                  variant="primary" 
-                  size="medium" 
-                  className="me-2"
-                  onClick={() => handleEdit(trabajador.id)}
-                >
-                  <MdDelete />
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-    </Container>
-  );
+      <thead>
+       <tr>
+        <th>Nombre</th>
+        <th>Teléfono</th>
+        <th>IP</th>
+        <th>Corte</th>
+       </tr>
+      </thead>
+
+      <tbody>
+
+       {alertas.porVencer.map(c=>(
+        <tr key={c.id}>
+         <td>{c.nombre}</td>
+         <td>{c.telefono}</td>
+         <td>{c.ip}</td>
+         <td>{c.fechaCorte}</td>
+        </tr>
+       ))}
+
+      </tbody>
+
+     </Table>
+
+    </Card.Body>
+
+   </Card>
+
+  </div>
+
+ );
+
 }

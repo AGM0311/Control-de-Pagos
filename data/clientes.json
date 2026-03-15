@@ -1,0 +1,13 @@
+[
+  {
+    "id": "1773545220103",
+    "nombre": "AXL",
+    "telefono": "57753",
+    "ip": "43",
+    "plan": "MENE",
+    "precio": 1,
+    "fechaCorte": 1,
+    "estado": "activo",
+    "pagos": []
+  }
+]
