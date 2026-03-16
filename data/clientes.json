@@ -7,8 +7,12 @@
     "plan": "antena",
     "precio": 400,
     "fechaCorte": 1,
-    "estado": "activo",
-    "pagos": []
+    "estado": "suspendido",
+    "pagos": [],
+    "pagoProximo": {
+      "fechaVencimiento": "2026-04-01T06:00:00.000Z",
+      "diffDias": 17
+    }
   },
   {
     "id": "antena_9",
@@ -1605,5 +1609,4 @@
     "estado": "activo",
     "pagos": []
   }
-
 ]
