@@ -83,6 +83,7 @@ ipcMain.handle("app:install-update", () => {
 autoUpdater.on("checking-for-update", () => enviarEstadoActualizacion({ channel: "checking" }));
 autoUpdater.on("update-available", (info) => enviarEstadoActualizacion({ channel: "available", data: info }));
 autoUpdater.on("update-not-available", (info) => enviarEstadoActualizacion({ channel: "not-available", data: info }));
+autoUpdater.on("download-progress", (p) => enviarEstadoActualizacion({ channel: "progress", data: p }));
 autoUpdater.on("update-downloaded", (info) => enviarEstadoActualizacion({ channel: "downloaded", data: info }));
 autoUpdater.on("error", (err) => enviarEstadoActualizacion({ channel: "error", data: err?.message || String(err) }));
 

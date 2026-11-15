@@ -100,6 +100,9 @@ function validarCliente(body, parcial = false) {
   if (body.estado !== undefined && !["activo", "suspendido"].includes(body.estado)) {
     errores.push("'estado' debe ser 'activo' o 'suspendido'");
   }
+  if (body.fechaUltimoPago !== undefined && body.fechaUltimoPago !== "" && !esFechaValida(body.fechaUltimoPago)) {
+    errores.push("'fechaUltimoPago' debe ser una fecha válida");
+  }
 
   return errores;
 }
@@ -113,6 +116,7 @@ function clienteNormalizado(body) {
     precio: Number(body.precio) || 0,
     fechaCorte: Number(body.fechaCorte) || 1,
     estado: body.estado || "activo",
+    fechaUltimoPago: body.fechaUltimoPago || "",
     pagos: [],
   };
 }
@@ -331,6 +335,7 @@ app.post("/restaurar-clientes", (req, res) => {
       precio: Number(c.precio) || 0,
       fechaCorte: Number(c.fechaCorte) || 1,
       estado: c.estado === "suspendido" ? "suspendido" : "activo",
+      fechaUltimoPago: c.fechaUltimoPago || "",
       pagos: Array.isArray(c.pagos) ? c.pagos : [],
     });
     agregados++;

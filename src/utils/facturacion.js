@@ -41,7 +41,8 @@ export function estadoPago(cliente, hoy = new Date()) {
   // Último corte: el ciclo que ya debería estar pagado.
   const ultimoCorte = corteEsteMes <= hoyDia ? corteEsteMes : corteMesPasado;
 
-  // Último pago registrado (el más reciente).
+  // Último pago registrado: el más reciente entre el historial de pagos y el
+  // campo "fechaUltimoPago" (útil para cargar datos desde papel).
   let ultimoPago = null;
   (cliente?.pagos || []).forEach((p) => {
     const d = new Date(p.fecha);
@@ -49,6 +50,12 @@ export function estadoPago(cliente, hoy = new Date()) {
       ultimoPago = d;
     }
   });
+  if (cliente?.fechaUltimoPago) {
+    const d = new Date(cliente.fechaUltimoPago);
+    if (!Number.isNaN(d.getTime()) && (!ultimoPago || d > ultimoPago)) {
+      ultimoPago = d;
+    }
+  }
 
   // Está al día si pagó a partir del último corte (aunque haya sido tarde).
   const vencido = !ultimoPago || ultimoPago < ultimoCorte;

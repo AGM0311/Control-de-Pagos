@@ -15,6 +15,7 @@ const FORM_VACIO = {
   precio: "",
   fechaCorte: 1,
   estado: "activo",
+  fechaUltimoPago: "",
 };
 
 export function Registro() {
@@ -78,6 +79,7 @@ export function Registro() {
       precio: cliente.precio ?? "",
       fechaCorte: cliente.fechaCorte || 1,
       estado: cliente.estado || "activo",
+      fechaUltimoPago: cliente.fechaUltimoPago || "",
     });
     setModoEdicion(true);
     setMensaje(null);
@@ -198,6 +200,17 @@ export function Registro() {
               ))}
             </Form.Select>
           </Col>
+          <Col md={3}>
+            <Form.Label>Último pago</Form.Label>
+            <Form.Control
+              type="date"
+              value={formData.fechaUltimoPago}
+              onChange={(e) => setFormData({ ...formData, fechaUltimoPago: e.target.value })}
+            />
+            <Form.Text className="text-muted">
+              Para cargar pagos desde tu registro en papel.
+            </Form.Text>
+          </Col>
         </Row>
 
         <Row className="mb-4">
@@ -234,6 +247,7 @@ export function Registro() {
             <th>Plan</th>
             <th>Precio</th>
             <th>Corte</th>
+            <th>Último pago</th>
             <th>Próximo pago</th>
             <th>Días</th>
             <th>Estado</th>
@@ -256,6 +270,7 @@ export function Registro() {
                 <td>{cliente.plan || "—"}</td>
                 <td>{formatearMonto(cliente.precio)}</td>
                 <td>{cliente.fechaCorte}</td>
+                <td>{cliente.fechaUltimoPago ? formatearFecha(cliente.fechaUltimoPago) : "—"}</td>
                 <td>{formatearFecha(vencimiento)}</td>
                 <td>{vencido ? `-${cliente.estadoPago.diasAtraso}` : diffDias}</td>
                 <td>

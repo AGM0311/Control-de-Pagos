@@ -135,6 +135,9 @@ export function InformeForm() {
               <strong>Precio:</strong> {formatearMonto(clienteSeleccionado.precio)}
             </span>
             <span>
+              <strong>Último pago:</strong> {formatearFecha(info.ultimoPago)}
+            </span>
+            <span>
               <strong>Próximo pago:</strong> {formatearFecha(info.vencimiento)}
             </span>
             {info.vencido ? (
