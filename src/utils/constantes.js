@@ -18,6 +18,7 @@ export const API_ROUTES = {
     DELETE: (id) => `/alertas/${id}`,
   },
   IMPORTAR: "/importar-clientes",
+  RESTAURAR: "/restaurar-clientes",
 };
 
 // Métodos de pago disponibles.

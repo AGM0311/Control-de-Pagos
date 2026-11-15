@@ -295,6 +295,51 @@ app.post("/importar-clientes", upload.single("archivo"), async (req, res) => {
   }
 });
 
+// ---------------------------------------------------------------- restauración
+
+// Restaura clientes desde un respaldo JSON (un arreglo de clientes).
+// No borra los existentes: añade los que no estén ya (por id o por IP).
+app.post("/restaurar-clientes", (req, res) => {
+  const respaldo = req.body;
+  const lista = Array.isArray(respaldo)
+    ? respaldo
+    : Array.isArray(respaldo?.clientes)
+      ? respaldo.clientes
+      : null;
+
+  if (!lista) {
+    return res.status(400).json({ error: "El respaldo debe ser un arreglo de clientes" });
+  }
+
+  const clientesActuales = readData(FILE_CLIENTES);
+  let agregados = 0;
+
+  lista.forEach((c, i) => {
+    if (!c || typeof c.nombre !== "string" || !c.nombre.trim()) return;
+
+    const existe = clientesActuales.some(
+      (existente) => existente.id === c.id || (c.ip && existente.ip === c.ip)
+    );
+    if (existe) return;
+
+    clientesActuales.push({
+      id: c.id || `${Date.now()}-${Math.random().toString(36).slice(2, 7)}-${i}`,
+      nombre: c.nombre.trim(),
+      telefono: c.telefono || "",
+      ip: c.ip || "",
+      plan: c.plan || "",
+      precio: Number(c.precio) || 0,
+      fechaCorte: Number(c.fechaCorte) || 1,
+      estado: c.estado === "suspendido" ? "suspendido" : "activo",
+      pagos: Array.isArray(c.pagos) ? c.pagos : [],
+    });
+    agregados++;
+  });
+
+  writeData(FILE_CLIENTES, clientesActuales);
+  res.json({ mensaje: "Respaldo restaurado", agregados });
+});
+
 // ---------------------------------------------------------------- servidor
 
 // Inicia el servidor Express y, si existe el frontend compilado (`build/`),

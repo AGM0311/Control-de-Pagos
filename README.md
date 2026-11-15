@@ -49,6 +49,8 @@ Abre tu navegador en <http://localhost:3000>.
 - **Historial:** historial de pagos por cliente con total acumulado.
 - **Importar:** carga masiva desde `.docx` o `.xlsx` (columnas IP y Nombre),
   evitando duplicados por IP.
+- **Restaurar respaldo:** recupera todos los clientes desde un archivo `.json`
+  (por ejemplo, un `clientes.json` guardado antes), sin borrar los existentes.
 
 ### Regla de facturación
 
@@ -104,7 +106,9 @@ para Windows. La arquitectura lo permite sin rehacer nada:
 
 ### Generar el instalador de Windows
 
-En una PC con Windows y Node.js instalado:
+El instalador se compila **automáticamente con GitHub Actions** cada vez que se
+sube un tag de versión (`v*`), así que no hace falta compilar a mano. Si aun así
+quieres hacerlo en una PC con Windows:
 
 ```bash
 npm install
@@ -120,12 +124,12 @@ elegir la carpeta de instalación.
 La app usa `electron-updater` para actualizarse sola desde **GitHub Releases**.
 Para publicar una nueva versión:
 
-1. Sube el número de versión en `package.json` (ej. `0.3.0`).
-2. Publica con un token de GitHub:
+1. Sube el número de versión en `package.json` (ej. `0.4.0`).
+2. Crea un tag y súbelo (GitHub Actions compila y publica el instalador solo):
 
-   ```powershell
-   $env:GH_TOKEN = gh auth token
-   npm run dist:win -- --publish always
+   ```bash
+   git tag v0.4.0
+   git push origin v0.4.0
    ```
 
 3. La próxima vez que un usuario abra la app, detectará la nueva versión,
