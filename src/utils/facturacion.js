@@ -97,6 +97,52 @@ export function ingresosEnPeriodo(clientes, desde, hasta) {
   return total;
 }
 
+// Ingresos por mes (últimos `meses` meses) → [{ mes, etiqueta, total }, ...]
+export function ingresosPorMes(clientes, meses = 12, hoy = new Date()) {
+  const resultado = [];
+  for (let i = meses - 1; i >= 0; i--) {
+    const fecha = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+    resultado.push({
+      mes: `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}`,
+      etiqueta: fecha.toLocaleDateString("es-MX", { month: "short", year: "2-digit" }),
+      total: 0,
+    });
+  }
+  (clientes || []).forEach((c) => {
+    (c.pagos || []).forEach((p) => {
+      const d = new Date(p.fecha);
+      if (Number.isNaN(d.getTime())) return;
+      const clave = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const fila = resultado.find((r) => r.mes === clave);
+      if (fila) fila.total += Number(p.monto) || 0;
+    });
+  });
+  return resultado;
+}
+
+// Clientes agrupados por plan → [{ plan, cantidad, ingresosMensuales }]
+export function clientesPorPlan(clientes) {
+  const mapa = {};
+  (clientes || []).forEach((c) => {
+    const plan = (c.plan || "").trim() || "Sin plan";
+    if (!mapa[plan]) mapa[plan] = { plan, cantidad: 0, ingresosMensuales: 0 };
+    mapa[plan].cantidad += 1;
+    mapa[plan].ingresosMensuales += Number(c.precio) || 0;
+  });
+  return Object.values(mapa).sort((a, b) => b.cantidad - a.cantidad);
+}
+
+// Total cobrado histórico (todos los pagos de todos los clientes).
+export function ingresosTotales(clientes) {
+  let total = 0;
+  (clientes || []).forEach((c) => {
+    (c.pagos || []).forEach((p) => {
+      total += Number(p.monto) || 0;
+    });
+  });
+  return total;
+}
+
 // Formatea una fecha a "dd/mm/aaaa".
 export function formatearFecha(fecha) {
   const d = new Date(fecha);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Button, Form, Row, Col, Table, Alert } from "react-bootstrap";
-import { MdDelete } from "react-icons/md";
+import { Button, Form, Row, Col, Table, Alert, Modal } from "react-bootstrap";
+import { MdDelete, MdNotifications, MdOutlineAddComment } from "react-icons/md";
 import { FiEdit } from "react-icons/fi";
 import api from "../../api/api";
 import { API_ROUTES, ESTADOS_CLIENTE } from "../../utils/constantes";
@@ -24,6 +24,50 @@ export function Registro() {
   const [mensaje, setMensaje] = useState(null);
   const [busqueda, setBusqueda] = useState("");
   const [formData, setFormData] = useState(FORM_VACIO);
+
+  // Alertas / notas por cliente
+  const [clienteNotas, setClienteNotas] = useState(null);
+  const [notas, setNotas] = useState([]);
+  const [notaTexto, setNotaTexto] = useState("");
+  const [mostrarNotas, setMostrarNotas] = useState(false);
+
+  const fetchNotas = async (clienteId) => {
+    try {
+      const res = await api.get(API_ROUTES.ALERTAS.GET);
+      const todas = Array.isArray(res.data) ? res.data : [];
+      setNotas(todas.filter((a) => a.clienteId === clienteId));
+    } catch (error) {
+      console.error("Error al obtener notas:", error);
+      setNotas([]);
+    }
+  };
+
+  const abrirNotas = (cliente) => {
+    setClienteNotas(cliente);
+    setNotaTexto("");
+    fetchNotas(cliente.id);
+    setMostrarNotas(true);
+  };
+
+  const agregarNota = async () => {
+    if (!notaTexto.trim()) return;
+    try {
+      await api.post(API_ROUTES.ALERTAS.POST, { clienteId: clienteNotas.id, mensaje: notaTexto.trim() });
+      setNotaTexto("");
+      fetchNotas(clienteNotas.id);
+    } catch (error) {
+      console.error("Error al agregar nota:", error);
+    }
+  };
+
+  const eliminarNota = async (id) => {
+    try {
+      await api.delete(API_ROUTES.ALERTAS.DELETE(id));
+      fetchNotas(clienteNotas.id);
+    } catch (error) {
+      console.error("Error al eliminar nota:", error);
+    }
+  };
 
   const fetchClientes = async () => {
     try {
@@ -284,6 +328,9 @@ export function Registro() {
                   <Button variant="warning" size="sm" className="me-2" onClick={() => handleEdit(cliente)}>
                     <FiEdit />
                   </Button>
+                  <Button variant="info" size="sm" className="me-2" onClick={() => abrirNotas(cliente)} title="Notas / alertas">
+                    <MdNotifications />
+                  </Button>
                   <Button variant="danger" size="sm" onClick={() => handleDelete(cliente.id)}>
                     <MdDelete />
                   </Button>
@@ -295,6 +342,48 @@ export function Registro() {
       </Table>
 
       {clientesConEstado.length === 0 && <p className="text-muted">No hay clientes registrados todavía.</p>}
+
+      {/* Modal de notas / alertas */}
+      <Modal show={mostrarNotas} onHide={() => setMostrarNotas(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Notas de {clienteNotas?.nombre}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {notas.length > 0 ? (
+            <ul className="list-group mb-3">
+              {notas.map((n) => (
+                <li key={n.id} className="list-group-item d-flex justify-content-between align-items-center">
+                  <span>{n.mensaje}</span>
+                  <Button variant="outline-danger" size="sm" onClick={() => eliminarNota(n.id)}>
+                    <MdDelete />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-muted">Sin notas todavía.</p>
+          )}
+
+          <div className="d-flex gap-2">
+            <Form.Control
+              type="text"
+              placeholder="Escribe una nota o alerta…"
+              value={notaTexto}
+              onChange={(e) => setNotaTexto(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  agregarNota();
+                }
+              }}
+            />
+            <Button variant="primary" onClick={agregarNota} disabled={!notaTexto.trim()}>
+              <MdOutlineAddComment className="me-1" />
+              Añadir
+            </Button>
+          </div>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 }

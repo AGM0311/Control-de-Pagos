@@ -4,7 +4,7 @@ import { IoHome } from "react-icons/io5";
 import { GiArchiveRegister } from "react-icons/gi";
 import { MdOutlineManageHistory } from "react-icons/md";
 import { TbAlertTriangleFilled } from "react-icons/tb";
-import { BiDollar, BiImport, BiRefresh } from "react-icons/bi";
+import { BiDollar, BiImport, BiRefresh, BiBarChartAlt2 } from "react-icons/bi";
 
 const items = [
   { to: "/", icon: <IoHome size={22} />, label: "Inicio" },
@@ -12,6 +12,7 @@ const items = [
   { to: "/informe", icon: <BiDollar size={22} />, label: "Pagos" },
   { to: "/gestion", icon: <TbAlertTriangleFilled size={22} />, label: "Cobros" },
   { to: "/usuarios", icon: <MdOutlineManageHistory size={22} />, label: "Historial" },
+  { to: "/reportes", icon: <BiBarChartAlt2 size={22} />, label: "Reportes" },
   { to: "/importar", icon: <BiImport size={22} />, label: "Importar" },
 ];
 
