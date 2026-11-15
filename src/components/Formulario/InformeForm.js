@@ -1,104 +1,113 @@
 import React, { useState, useEffect } from "react";
-import { Form, Button, Table, Row, Col } from "react-bootstrap";
-import axios from "axios";
-import { BASE_API } from "../../utils/constantes";
+import { Form, Button, Table, Row, Col, Alert } from "react-bootstrap";
+import { MdDelete } from "react-icons/md";
+import api from "../../api/api";
+import { API_ROUTES, METODOS_PAGO } from "../../utils/constantes";
+import { formatearFecha, formatearMonto } from "../../utils/facturacion";
 
-export function InformeForm({ refreshClientes }) {
+export function InformeForm() {
   const [clientes, setClientes] = useState([]);
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
   const [fecha, setFecha] = useState("");
   const [monto, setMonto] = useState("");
-  const [metodo, setMetodo] = useState("Efectivo");
+  const [metodo, setMetodo] = useState(METODOS_PAGO[0]);
   const [loading, setLoading] = useState(true);
+  const [mensaje, setMensaje] = useState(null);
 
-  // Traer todos los clientes al montar el componente
-  useEffect(() => {
-    const fetchClientes = async () => {
-      try {
-        const res = await axios.get(`${BASE_API}/clientes`);
-        setClientes(res.data);
-      } catch (err) {
-        console.error(err);
-        alert("Error al cargar los clientes");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchClientes();
-  }, []);
-
-  // Función para agregar un pago
-  const handleAgregarPago = async (e) => {
-    e.preventDefault();
-    if (!fecha || !monto || !clienteSeleccionado) return;
-
-    const nuevoPago = {
-      fecha,
-      monto: parseFloat(monto),
-      metodo: metodo || "N/A",
-    };
-
+  const fetchClientes = async () => {
     try {
-      // Actualizamos localmente el cliente seleccionado
-      const clienteActualizado = {
-        ...clienteSeleccionado,
-        pagos: [...(clienteSeleccionado.pagos || []), nuevoPago],
-      };
-
-      // Guardamos en el backend JSON
-      await axios.put(`${BASE_API}/clientes/${clienteSeleccionado.id}`, clienteActualizado);
-
-      // Limpiamos formulario
-      setFecha("");
-      setMonto("");
-      setMetodo("Efectivo");
-
-      // Actualizamos tabla inmediatamente
-      setClienteSeleccionado(clienteActualizado);
-
-      // Actualizamos lista de clientes si existe función en el padre
-      refreshClientes?.();
-    } catch (error) {
-      console.error(error);
-      alert(error.response?.data?.message || "No se pudo registrar el pago");
+      const res = await api.get(API_ROUTES.CLIENTES.GET);
+      const data = Array.isArray(res.data) ? res.data : [];
+      setClientes(data);
+      if (clienteSeleccionado) {
+        const actualizado = data.find((c) => c.id === clienteSeleccionado.id);
+        setClienteSeleccionado(actualizado || null);
+      }
+    } catch (err) {
+      console.error(err);
+      setMensaje({ tipo: "danger", texto: "No se pudieron cargar los clientes." });
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (loading) return <p>Cargando clientes...</p>;
+  useEffect(() => {
+    fetchClientes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleAgregarPago = async (e) => {
+    e.preventDefault();
+    setMensaje(null);
+    if (!clienteSeleccionado || !fecha || !monto) return;
+
+    try {
+      const res = await api.post(API_ROUTES.PAGOS.POST(clienteSeleccionado.id), {
+        fecha,
+        monto: parseFloat(monto),
+        metodo,
+      });
+      setClienteSeleccionado(res.data);
+      setFecha("");
+      setMonto("");
+      setMetodo(METODOS_PAGO[0]);
+      setMensaje({ tipo: "success", texto: "Pago registrado correctamente." });
+      fetchClientes();
+    } catch (error) {
+      console.error(error);
+      setMensaje({
+        tipo: "danger",
+        texto: error.response?.data?.mensaje || "No se pudo registrar el pago.",
+      });
+    }
+  };
+
+  const handleEliminarPago = async (index) => {
+    if (!window.confirm("¿Eliminar este pago?")) return;
+    try {
+      const res = await api.delete(API_ROUTES.PAGOS.DELETE(clienteSeleccionado.id, index));
+      setClienteSeleccionado(res.data);
+      fetchClientes();
+    } catch (error) {
+      console.error(error);
+      setMensaje({ tipo: "danger", texto: "No se pudo eliminar el pago." });
+    }
+  };
+
+  if (loading) return <p className="p-3">Cargando clientes...</p>;
 
   return (
     <div className="p-3 border rounded shadow-sm mb-4">
       <h4>Registrar pago</h4>
 
-      {/* Selector de clientes */}
+      {mensaje && (
+        <Alert variant={mensaje.tipo} onClose={() => setMensaje(null)} dismissible>
+          {mensaje.texto}
+        </Alert>
+      )}
+
       <Form.Select
         className="mb-3"
         value={clienteSeleccionado?.id || ""}
         onChange={(e) => {
           const c = clientes.find((cl) => cl.id === e.target.value);
-          setClienteSeleccionado(c);
+          setClienteSeleccionado(c || null);
         }}
       >
         <option value="">Selecciona un cliente</option>
         {clientes.map((c) => (
           <option key={c.id} value={c.id}>
-            {c.nombre}
+            {c.nombre} {c.ip ? `· IP ${c.ip}` : ""}
           </option>
         ))}
       </Form.Select>
 
       {clienteSeleccionado && (
         <>
-          {/* Formulario de pago */}
           <Form onSubmit={handleAgregarPago}>
             <Row className="mb-2">
               <Col md={3}>
-                <Form.Control
-                  type="date"
-                  value={fecha}
-                  onChange={(e) => setFecha(e.target.value)}
-                  required
-                />
+                <Form.Control type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} required />
               </Col>
               <Col md={3}>
                 <Form.Control
@@ -112,43 +121,44 @@ export function InformeForm({ refreshClientes }) {
                 />
               </Col>
               <Col md={3}>
-                <Form.Control
-                  type="text"
-                  value={metodo}
-                  placeholder="Método"
-                  onChange={(e) => setMetodo(e.target.value)}
-                />
+                <Form.Select value={metodo} onChange={(e) => setMetodo(e.target.value)}>
+                  {METODOS_PAGO.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </Form.Select>
               </Col>
               <Col md={3}>
                 <Button type="submit" disabled={!fecha || !monto}>
-                  Agregar Pago
+                  Agregar pago
                 </Button>
               </Col>
             </Row>
           </Form>
 
-          {/* Historial de pagos */}
-          <h5 className="mt-3">Historial de Pagos - {clienteSeleccionado.nombre}</h5>
+          <h5 className="mt-3">Historial de pagos — {clienteSeleccionado.nombre}</h5>
           {clienteSeleccionado.pagos?.length > 0 ? (
-            <Table striped bordered hover>
+            <Table striped bordered hover responsive>
               <thead>
                 <tr>
                   <th>Fecha</th>
                   <th>Monto</th>
                   <th>Método</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
                 {clienteSeleccionado.pagos.map((p, i) => (
                   <tr key={i}>
-                    <td>{p.fecha}</td>
+                    <td>{formatearFecha(p.fecha)}</td>
+                    <td>{formatearMonto(p.monto)}</td>
+                    <td>{p.metodo || "—"}</td>
                     <td>
-                      {p.monto.toLocaleString("es-AR", {
-                        style: "currency",
-                        currency: "ARS",
-                      })}
+                      <Button variant="outline-danger" size="sm" onClick={() => handleEliminarPago(i)}>
+                        <MdDelete />
+                      </Button>
                     </td>
-                    <td>{p.metodo}</td>
                   </tr>
                 ))}
               </tbody>

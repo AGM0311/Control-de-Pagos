@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { BASE_API } from "../../../utils/constantes";
+import { Table } from "react-bootstrap";
+import api from "../../../api/api";
+import { API_ROUTES } from "../../../utils/constantes";
+import { estadoPago, formatearFecha, formatearMonto } from "../../../utils/facturacion";
 
 export function Gestion() {
   const [clientes, setClientes] = useState([]);
@@ -12,10 +14,9 @@ export function Gestion() {
       setLoading(true);
       try {
         const [resClientes, resAlertas] = await Promise.all([
-          axios.get(`${BASE_API}/clientes`),
-          axios.get(`${BASE_API}/alertas`),
+          api.get(API_ROUTES.CLIENTES.GET),
+          api.get(API_ROUTES.ALERTAS.GET),
         ]);
-
         setClientes(Array.isArray(resClientes.data) ? resClientes.data : []);
         setAlertas(Array.isArray(resAlertas.data) ? resAlertas.data : []);
       } catch (err) {
@@ -26,90 +27,94 @@ export function Gestion() {
         setLoading(false);
       }
     };
-
     fetchDatos();
   }, []);
 
-  if (loading) return <p>Cargando clientes y alertas...</p>;
+  if (loading) return <p className="p-4">Cargando clientes y alertas...</p>;
 
-  const hoy = new Date();
+  const conEstado = clientes
+    .map((c) => ({ ...c, estado: estadoPago(c) }))
+    .filter((c) => c.estado.vencido || c.estado.diffDias <= 7)
+    .sort((a, b) => a.estado.diffDias - b.estado.diffDias);
 
-  // Calcula el próximo pago basado en fechaCorte
-  const calcularPagoProximo = (cliente) => {
-    if (!cliente.fechaCorte) return null;
+  const vencidos = conEstado.filter((c) => c.estado.vencido);
+  const porVencer = conEstado.filter((c) => !c.estado.vencido);
 
-    // Fecha de corte de este mes
-    let fechaVencimiento = new Date(hoy.getFullYear(), hoy.getMonth(), cliente.fechaCorte);
+  const alertasDe = (clienteId) => alertas.filter((a) => a.clienteId === clienteId);
 
-    // Si ya pasó, usar el mes siguiente
-    if (fechaVencimiento < hoy) {
-      fechaVencimiento.setMonth(fechaVencimiento.getMonth() + 1);
-    }
-
-    const diffDias = Math.ceil((fechaVencimiento - hoy) / (1000 * 60 * 60 * 24));
-    return { fechaVencimiento, diffDias };
+  const renderFila = (cliente) => {
+    const alertasCliente = alertasDe(cliente.id);
+    return (
+      <tr
+        key={cliente.id}
+        style={{ backgroundColor: cliente.estado.vencido ? "#f8d7da" : cliente.estado.diffDias <= 3 ? "#fff3cd" : "transparent" }}
+      >
+        <td>{cliente.nombre}</td>
+        <td>{cliente.plan || "—"}</td>
+        <td>{formatearMonto(cliente.precio)}</td>
+        <td>{formatearFecha(cliente.estado.vencimiento)}</td>
+        <td>{cliente.estado.vencido ? `Vencido hace ${cliente.estado.diasAtraso} días` : `En ${cliente.estado.diffDias} días`}</td>
+        <td>
+          {alertasCliente.length > 0 ? (
+            <ul className="mb-0">
+              {alertasCliente.map((a) => (
+                <li key={a.id}>{a.mensaje}</li>
+              ))}
+            </ul>
+          ) : (
+            <span className="text-muted">Sin alertas</span>
+          )}
+        </td>
+      </tr>
+    );
   };
-
-  // Filtra clientes con pagos próximos (ajustable, ej. 30 días)
-  const clientesAVencer = clientes
-    .map((c) => {
-      const pago = calcularPagoProximo(c);
-      return { ...c, pagoProximo: pago };
-    })
-    .filter((c) => c.pagoProximo && c.pagoProximo.diffDias >= 0 && c.pagoProximo.diffDias <= 30)
-    .sort((a, b) => a.pagoProximo.diffDias - b.pagoProximo.diffDias); // orden por proximidad
 
   return (
     <div className="p-4">
-      <h3 className="mb-3">Clientes con pagos próximos y alertas</h3>
+      <h3 className="mb-3">Pagos próximos y vencidos</h3>
 
-      {clientesAVencer.length === 0 ? (
+      {vencidos.length === 0 && porVencer.length === 0 ? (
         <p>No hay pagos próximos a vencer.</p>
       ) : (
-        <table className="table table-striped">
-          <thead>
-            <tr>
-              <th>Cliente</th>
-              <th>Plan</th>
-              <th>Pago próximo</th>
-              <th>Días faltantes</th>
-              <th>Alertas</th>
-            </tr>
-          </thead>
-          <tbody>
-            {clientesAVencer.map((cliente) => {
-              const alertasCliente = alertas.filter(
-                (a) => a.clienteId === cliente.id
-              );
+        <>
+          {vencidos.length > 0 && (
+            <>
+              <h5 className="text-danger">Vencidos ({vencidos.length})</h5>
+              <Table striped bordered hover responsive>
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Plan</th>
+                    <th>Precio</th>
+                    <th>Corte</th>
+                    <th>Atraso</th>
+                    <th>Alertas</th>
+                  </tr>
+                </thead>
+                <tbody>{vencidos.map(renderFila)}</tbody>
+              </Table>
+            </>
+          )}
 
-              return (
-                <tr
-                  key={cliente.id}
-                  style={{
-                    backgroundColor:
-                      cliente.pagoProximo.diffDias <= 3 ? "#f8d7da" : "transparent", // rojo si vence en 3 días o menos
-                  }}
-                >
-                  <td>{cliente.nombre}</td>
-                  <td>{cliente.plan}</td>
-                  <td>{cliente.pagoProximo.fechaVencimiento.toLocaleDateString("es-AR")}</td>
-                  <td>{cliente.pagoProximo.diffDias}</td>
-                  <td>
-                    {alertasCliente.length > 0 ? (
-                      <ul className="mb-0">
-                        {alertasCliente.map((a) => (
-                          <li key={a.id}>{a.mensaje}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <span>Sin alertas</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+          {porVencer.length > 0 && (
+            <>
+              <h5 className="mt-4">Por vencer en los próximos 7 días ({porVencer.length})</h5>
+              <Table striped bordered hover responsive>
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Plan</th>
+                    <th>Precio</th>
+                    <th>Próximo pago</th>
+                    <th>Días</th>
+                    <th>Alertas</th>
+                  </tr>
+                </thead>
+                <tbody>{porVencer.map(renderFila)}</tbody>
+              </Table>
+            </>
+          )}
+        </>
       )}
     </div>
   );

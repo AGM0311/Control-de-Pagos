@@ -1,30 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { Button, Form, Row, Col, Table } from 'react-bootstrap';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import { Button, Form, Row, Col, Table, Alert } from "react-bootstrap";
 import { MdDelete } from "react-icons/md";
 import { FiEdit } from "react-icons/fi";
-import { BASE_API } from '../../utils/constantes';
+import api from "../../api/api";
+import { API_ROUTES, ESTADOS_CLIENTE } from "../../utils/constantes";
+import { estadoPago, formatearFecha, formatearMonto } from "../../utils/facturacion";
+
+const FORM_VACIO = {
+  id: null,
+  nombre: "",
+  telefono: "",
+  ip: "",
+  plan: "",
+  precio: "",
+  fechaCorte: 1,
+  estado: "activo",
+};
 
 export function Registro() {
   const [clientes, setClientes] = useState([]);
-  const [alertas, setAlertas] = useState([]);
   const [modoEdicion, setModoEdicion] = useState(false);
-  const [formData, setFormData] = useState({
-    id: null,
-    nombre: '',
-    telefono: '',
-    ip: '',
-    plan: '',
-    precio: 0,
-    fechaCorte: 1,
-    estado: 'activo',
-    pagos: []
-  });
+  const [mensaje, setMensaje] = useState(null);
+  const [formData, setFormData] = useState(FORM_VACIO);
 
-  // Obtener clientes
   const fetchClientes = async () => {
     try {
-      const res = await axios.get(`${BASE_API}/clientes`);
+      const res = await api.get(API_ROUTES.CLIENTES.GET);
       setClientes(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error("Error al obtener clientes:", error);
@@ -32,181 +33,179 @@ export function Registro() {
     }
   };
 
-  // Obtener alertas
-  const fetchAlertas = async () => {
-    try {
-      const res = await axios.get(`${BASE_API}/alertas`);
-      setAlertas(Array.isArray(res.data) ? res.data : []);
-    } catch (error) {
-      console.error("Error al obtener alertas:", error);
-      setAlertas([]);
-    }
-  };
-
   useEffect(() => {
     fetchClientes();
-    fetchAlertas();
   }, []);
 
-  const handleSubmit = async e => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setMensaje(null);
+    const datos = {
+      ...formData,
+      precio: Number(formData.precio) || 0,
+      fechaCorte: Number(formData.fechaCorte) || 1,
+    };
+
     try {
       if (modoEdicion && formData.id) {
-        await axios.put(`${BASE_API}/clientes/${formData.id}`, formData);
+        await api.put(API_ROUTES.CLIENTES.PUT(formData.id), datos);
+        setMensaje({ tipo: "success", texto: "Cliente actualizado correctamente." });
       } else {
-        const dataToSend = { ...formData };
-        delete dataToSend.id;
-        await axios.post(`${BASE_API}/clientes`, dataToSend);
+        await api.post(API_ROUTES.CLIENTES.POST, datos);
+        setMensaje({ tipo: "success", texto: "Cliente registrado correctamente." });
       }
-      setFormData({
-        id: null,
-        nombre: '',
-        telefono: '',
-        ip: '',
-        plan: '',
-        precio: 0,
-        fechaCorte: 1,
-        estado: 'activo',
-        pagos: []
-      });
+      setFormData(FORM_VACIO);
       setModoEdicion(false);
       fetchClientes();
     } catch (error) {
-      console.error("Error al guardar cliente:", error.response?.data || error.message);
+      console.error("Error al guardar cliente:", error);
+      setMensaje({
+        tipo: "danger",
+        texto: error.response?.data?.errores?.join(" · ") || "No se pudo guardar el cliente.",
+      });
     }
   };
 
-  const handleEdit = cliente => {
-    setFormData({ ...cliente });
+  const handleEdit = (cliente) => {
+    setFormData({
+      id: cliente.id,
+      nombre: cliente.nombre || "",
+      telefono: cliente.telefono || "",
+      ip: cliente.ip || "",
+      plan: cliente.plan || "",
+      precio: cliente.precio ?? "",
+      fechaCorte: cliente.fechaCorte || 1,
+      estado: cliente.estado || "activo",
+    });
     setModoEdicion(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setMensaje(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleDelete = async id => {
+  const handleDelete = async (id) => {
+    if (!window.confirm("¿Eliminar este cliente? Esta acción no se puede deshacer.")) return;
     try {
-      await axios.delete(`${BASE_API}/clientes/${id}`);
+      await api.delete(API_ROUTES.CLIENTES.DELETE(id));
       fetchClientes();
     } catch (error) {
       console.error("Error al eliminar cliente:", error);
+      setMensaje({ tipo: "danger", texto: "No se pudo eliminar el cliente." });
     }
   };
 
   const handleCancelar = () => {
-    setFormData({
-      id: null,
-      nombre: '',
-      telefono: '',
-      ip: '',
-      plan: '',
-      precio: 0,
-      fechaCorte: 1,
-      estado: 'activo',
-      pagos: []
-    });
+    setFormData(FORM_VACIO);
     setModoEdicion(false);
+    setMensaje(null);
   };
 
-  // Función para calcular próximo pago y días faltantes
-  const calcularPagoProximo = (cliente) => {
-    const hoy = new Date();
-    let fechaVencimiento = new Date(hoy.getFullYear(), hoy.getMonth(), cliente.fechaCorte);
-    if (fechaVencimiento < hoy) fechaVencimiento.setMonth(fechaVencimiento.getMonth() + 1);
-    const diffDias = Math.ceil((fechaVencimiento - hoy)/(1000*60*60*24));
-    return { fechaVencimiento, diffDias };
-  };
-
-  // Ordenar clientes por próximo pago
-  const clientesOrdenados = clientes
-    .map(c => ({ ...c, pagoProximo: calcularPagoProximo(c) }))
-    .sort((a, b) => a.pagoProximo.diffDias - b.pagoProximo.diffDias);
+  const clientesConEstado = clientes
+    .map((c) => ({ ...c, estadoPago: estadoPago(c) }))
+    .sort((a, b) => a.estadoPago.diffDias - b.estadoPago.diffDias);
 
   return (
     <div className="p-4">
       <h3 className="fw-bold mb-4 text-center">
-        {modoEdicion ? 'Editar Cliente' : 'Registrar Cliente'}
+        {modoEdicion ? "Editar Cliente" : "Registrar Cliente"}
       </h3>
+
+      {mensaje && (
+        <Alert variant={mensaje.tipo} onClose={() => setMensaje(null)} dismissible>
+          {mensaje.texto}
+        </Alert>
+      )}
 
       <Form onSubmit={handleSubmit}>
         <Row className="mb-3">
-          <Col md="3">
-            <Form.Label>Nombre</Form.Label>
+          <Col md={4}>
+            <Form.Label>Nombre *</Form.Label>
             <Form.Control
               type="text"
               value={formData.nombre}
-              onChange={e => setFormData({ ...formData, nombre: e.target.value })}
+              required
+              onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
             />
           </Col>
-          <Col md="3">
+          <Col md={3}>
             <Form.Label>Teléfono</Form.Label>
             <Form.Control
               type="text"
               value={formData.telefono}
-              onChange={e => setFormData({ ...formData, telefono: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
             />
           </Col>
-          <Col md="3">
+          <Col md={3}>
             <Form.Label>IP</Form.Label>
             <Form.Control
               type="text"
               value={formData.ip}
-              onChange={e => setFormData({ ...formData, ip: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, ip: e.target.value })}
             />
           </Col>
         </Row>
 
         <Row className="mb-3">
-          <Col md="3">
+          <Col md={3}>
             <Form.Label>Plan</Form.Label>
             <Form.Control
               type="text"
               value={formData.plan}
-              onChange={e => setFormData({ ...formData, plan: e.target.value })}
+              placeholder="Ej. fibra 50 Mb"
+              onChange={(e) => setFormData({ ...formData, plan: e.target.value })}
             />
           </Col>
-          <Col md="3">
-            <Form.Label>Precio</Form.Label>
+          <Col md={3}>
+            <Form.Label>Precio mensual ($)</Form.Label>
             <Form.Control
               type="number"
+              min="0"
+              step="0.01"
               value={formData.precio}
-              onChange={e => setFormData({ ...formData, precio: Number(e.target.value) })}
+              onChange={(e) => setFormData({ ...formData, precio: e.target.value })}
             />
           </Col>
-          <Col md="3">
+          <Col md={3}>
             <Form.Label>Día de corte</Form.Label>
             <Form.Control
               type="number"
+              min="1"
+              max="28"
               value={formData.fechaCorte}
-              onChange={e => setFormData({ ...formData, fechaCorte: Number(e.target.value) })}
+              onChange={(e) => setFormData({ ...formData, fechaCorte: e.target.value })}
             />
           </Col>
-        </Row>
-
-        <Row className="mb-3">
-          <Col md="3">
+          <Col md={3}>
             <Form.Label>Estado</Form.Label>
             <Form.Select
               value={formData.estado}
-              onChange={e => setFormData({ ...formData, estado: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
             >
-              <option value="activo">Activo</option>
-              <option value="suspendido">Suspendido</option>
+              {ESTADOS_CLIENTE.map((estado) => (
+                <option key={estado} value={estado}>
+                  {estado === "activo" ? "Activo" : "Suspendido"}
+                </option>
+              ))}
             </Form.Select>
           </Col>
         </Row>
 
-        <Row className="mb-3">
-          <Button type="submit">{modoEdicion ? 'Actualizar' : 'Registrar'}</Button>
-          {modoEdicion && (
-            <Button variant="secondary" onClick={handleCancelar} className="ms-2">
-              Cancelar
+        <Row className="mb-4">
+          <Col>
+            <Button type="submit" variant="primary">
+              {modoEdicion ? "Actualizar" : "Registrar"}
             </Button>
-          )}
+            {modoEdicion && (
+              <Button variant="secondary" onClick={handleCancelar} className="ms-2">
+                Cancelar
+              </Button>
+            )}
+          </Col>
         </Row>
       </Form>
 
       <hr />
 
-      <Table striped bordered hover>
+      <Table striped bordered hover responsive>
         <thead>
           <tr>
             <th>Nombre</th>
@@ -215,47 +214,52 @@ export function Registro() {
             <th>Plan</th>
             <th>Precio</th>
             <th>Corte</th>
-            <th>Días faltantes</th>
-            <th>Alertas</th>
+            <th>Próximo pago</th>
+            <th>Días</th>
+            <th>Estado</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
-          {clientesOrdenados.map(cliente => {
-            const { fechaVencimiento, diffDias } = cliente.pagoProximo;
-            const alertasCliente = alertas.filter(a => a.clienteId === cliente.id);
+          {clientesConEstado.map((cliente) => {
+            const { vencimiento, diffDias, vencido } = cliente.estadoPago;
 
             let bgColor = "transparent";
-            if (diffDias <= 3) bgColor = "#f8d7da"; // rojo urgente
-            else if (diffDias <= 7) bgColor = "#fff3cd"; // amarillo próximo
+            if (vencido) bgColor = "#f8d7da";
+            else if (diffDias <= 3) bgColor = "#fff3cd";
 
             return (
               <tr key={cliente.id} style={{ backgroundColor: bgColor }}>
                 <td>{cliente.nombre}</td>
-                <td>{cliente.telefono}</td>
-                <td>{cliente.ip}</td>
-                <td>{cliente.plan}</td>
-                <td>${cliente.precio}</td>
+                <td>{cliente.telefono || "—"}</td>
+                <td>{cliente.ip || "—"}</td>
+                <td>{cliente.plan || "—"}</td>
+                <td>{formatearMonto(cliente.precio)}</td>
                 <td>{cliente.fechaCorte}</td>
-                <td>{diffDias}</td>
+                <td>{formatearFecha(vencimiento)}</td>
+                <td>{vencido ? `-${cliente.estadoPago.diasAtraso}` : diffDias}</td>
                 <td>
-                  {alertasCliente.length > 0 ? (
-                    <ul className="mb-0">
-                      {alertasCliente.map(a => <li key={a.id}>{a.mensaje}</li>)}
-                    </ul>
+                  {cliente.estado === "activo" ? (
+                    <span className="badge bg-success">Activo</span>
                   ) : (
-                    <span>Sin alertas</span>
+                    <span className="badge bg-secondary">Suspendido</span>
                   )}
                 </td>
                 <td>
-                  <Button variant="warning" onClick={() => handleEdit(cliente)}><FiEdit /></Button>{' '}
-                  <Button variant="danger" onClick={() => handleDelete(cliente.id)}><MdDelete /></Button>
+                  <Button variant="warning" size="sm" className="me-2" onClick={() => handleEdit(cliente)}>
+                    <FiEdit />
+                  </Button>
+                  <Button variant="danger" size="sm" onClick={() => handleDelete(cliente.id)}>
+                    <MdDelete />
+                  </Button>
                 </td>
               </tr>
-            )
+            );
           })}
         </tbody>
       </Table>
+
+      {clientesConEstado.length === 0 && <p className="text-muted">No hay clientes registrados todavía.</p>}
     </div>
   );
 }
