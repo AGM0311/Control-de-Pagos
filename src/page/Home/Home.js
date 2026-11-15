@@ -26,6 +26,7 @@ export function Home() {
 
   useEffect(() => {
     fetchDatos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const clientesConEstado = clientes.map((c) => ({
