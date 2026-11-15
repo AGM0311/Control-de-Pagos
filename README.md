@@ -49,8 +49,9 @@ Abre tu navegador en <http://localhost:3000>.
 - **Historial:** historial de pagos por cliente con total acumulado.
 - **Importar:** carga masiva desde `.docx` o `.xlsx` (columnas IP y Nombre),
   evitando duplicados por IP.
-- **Restaurar respaldo:** recupera todos los clientes desde un archivo `.json`
-  (por ejemplo, un `clientes.json` guardado antes), sin borrar los existentes.
+- **Descargar / Restaurar respaldo:** guarda una copia de todos los clientes en
+  un `.json` (para pasarla a otra PC o como respaldo de seguridad) y recupérala
+  en otra computadora sin borrar los existentes.
 
 ### Regla de facturación
 
