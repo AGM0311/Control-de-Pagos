@@ -13,7 +13,7 @@ process.env.DATA_DIR = path.join(app.getPath("userData"), "data");
 process.env.UPLOADS_DIR = path.join(app.getPath("userData"), "uploads");
 
 // Arranca el servidor Express (usa la URL de la app empaquetada).
-const { startServer } = require("../server");
+const { startServer, crearBackup } = require("../server");
 startServer();
 
 let mainWindow;
@@ -104,6 +104,17 @@ app.whenReady().then(() => {
       console.error("Error al buscar actualizaciones:", err);
     });
   }
+
+  // Respaldo automático periódico (cada 12 horas mientras la app está abierta).
+  // Además del respaldo que ya se hace al arrancar.
+  setInterval(() => {
+    try {
+      crearBackup();
+      console.log("Respaldo automático periódico creado.");
+    } catch (err) {
+      console.error("Error en el respaldo periódico:", err);
+    }
+  }, 12 * 60 * 60 * 1000);
 });
 
 app.on("window-all-closed", () => {

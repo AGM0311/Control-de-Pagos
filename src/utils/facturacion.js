@@ -153,6 +153,27 @@ export function mensajeWhatsapp(cliente, hoy = new Date()) {
   return `¡Hola ${nombre}! 👋 Te saluda Servicios Ely. Te recordamos que tu pago de internet${plan} vence en ${estado.diffDias} días. Monto: ${monto}. ¡Gracias! 🙏`;
 }
 
+// Clasifica el atraso de un cliente para mostrar un estado claro.
+//  - aldia  : sin atraso
+//  - vencido: 1-29 días
+//  - moroso : 30-59 días
+//  - cronico: 60 o más días
+export function clasificarAtraso(cliente, hoy = new Date()) {
+  const estado = estadoPago(cliente, hoy);
+  if (!estado.vencido) return { nivel: "aldia", etiqueta: "Al día", dias: 0 };
+  if (estado.diasAtraso >= 60) return { nivel: "cronico", etiqueta: `Crónico · ${estado.diasAtraso} días`, dias: estado.diasAtraso };
+  if (estado.diasAtraso >= 30) return { nivel: "moroso", etiqueta: `Moroso · ${estado.diasAtraso} días`, dias: estado.diasAtraso };
+  return { nivel: "vencido", etiqueta: `Vencido · ${estado.diasAtraso} días`, dias: estado.diasAtraso };
+}
+
+// Normaliza un teléfono a solo dígitos. Si tiene 10 dígitos (número local
+// mexicano sin lada), le antepone el prefijo 52.
+export function normalizarTelefono(telefono) {
+  let t = (telefono || "").replace(/[^\d]/g, "");
+  if (t.length === 10) t = `52${t}`;
+  return t;
+}
+
 // Total cobrado en un periodo arbitrario.
 export function ingresosEnPeriodo(clientes, desde, hasta) {
   let total = 0;

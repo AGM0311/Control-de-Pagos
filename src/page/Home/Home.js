@@ -42,6 +42,7 @@ export function Home() {
   const ingresosMes = ingresosDelMes(clientes);
   const cobradoHoy = ingresosDelDia(clientes);
   const porCobrarTotal = porCobrar(clientes);
+  const hoyVencen = clientesConEstado.filter((c) => c.estado.diffDias === 0).length;
 
   const clientesFiltrados = clientesConEstado
     .filter(
@@ -61,6 +62,21 @@ export function Home() {
   return (
     <div className="container-fluid">
       <h2 className="mt-4">Panel de control</h2>
+
+      <div className="alert alert-warning py-2 mt-3 mb-0 d-flex flex-wrap gap-4">
+        <span>
+          Hoy vencen: <strong>{hoyVencen}</strong>
+        </span>
+        <span>
+          Vencidos: <strong className="text-danger">{vencidos}</strong>
+        </span>
+        <span>
+          Por cobrar: <strong className="text-danger">{formatearMonto(porCobrarTotal)}</strong>
+        </span>
+        <span>
+          Cobrado hoy: <strong className="text-success">{formatearMonto(cobradoHoy)}</strong>
+        </span>
+      </div>
 
       {/* Tarjetas */}
       <div className="row mt-4 g-2">

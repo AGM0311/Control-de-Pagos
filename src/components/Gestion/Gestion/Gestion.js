@@ -1,11 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Table, Button, Form } from "react-bootstrap";
-import { MdAttachMoney } from "react-icons/md";
+import { Table, Button, Form, Modal, Alert } from "react-bootstrap";
+import { MdAttachMoney, MdContentCopy } from "react-icons/md";
 import { FaWhatsapp } from "react-icons/fa";
 import api from "../../../api/api";
 import { API_ROUTES } from "../../../utils/constantes";
-import { estadoPago, formatearFecha, formatearMonto, porCobrar, whatsappLink, mensajeWhatsapp } from "../../../utils/facturacion";
+import {
+  estadoPago,
+  formatearFecha,
+  formatearMonto,
+  porCobrar,
+  whatsappLink,
+  mensajeWhatsapp,
+  clasificarAtraso,
+} from "../../../utils/facturacion";
 
 export function Gestion() {
   const navigate = useNavigate();
@@ -13,6 +21,18 @@ export function Gestion() {
   const [alertas, setAlertas] = useState([]);
   const [busqueda, setBusqueda] = useState("");
   const [loading, setLoading] = useState(true);
+  const [mostrarRecordar, setMostrarRecordar] = useState(false);
+  const [mensaje, setMensaje] = useState(null);
+
+  const copiarRecordatorios = () => {
+    const texto = vencidos
+      .map((c) => `${c.nombre} (${c.telefono || "sin teléfono"}): ${mensajeWhatsapp(c)}`)
+      .join("\n\n");
+    navigator.clipboard
+      .writeText(texto)
+      .then(() => setMensaje({ tipo: "success", texto: "Mensajes copiados al portapapeles." }))
+      .catch(() => setMensaje({ tipo: "danger", texto: "No se pudieron copiar los mensajes." }));
+  };
 
   useEffect(() => {
     const fetchDatos = async () => {
@@ -79,9 +99,13 @@ export function Gestion() {
         <td>{formatearMonto(cliente.precio)}</td>
         <td>{formatearFecha(cliente.estado.vencimiento)}</td>
         <td>
-          {cliente.estado.vencido
-            ? `Vencido hace ${cliente.estado.diasAtraso} días`
-            : `En ${cliente.estado.diffDias} días`}
+          {(() => {
+            const c = clasificarAtraso(cliente);
+            if (c.nivel === "cronico") return <span className="badge bg-dark">Crónico · {c.dias} días</span>;
+            if (c.nivel === "moroso") return <span className="badge bg-danger">Moroso · {c.dias} días</span>;
+            if (c.nivel === "vencido") return <span className="badge bg-warning text-dark">Vencido · {c.dias} días</span>;
+            return <span className="text-muted">En {cliente.estado.diffDias} días</span>;
+          })()}
         </td>
         <td>
           {alertasCliente.length > 0 ? (
@@ -117,7 +141,19 @@ export function Gestion() {
 
   return (
     <div className="p-4">
-      <h3 className="mb-3">Pagos próximos y vencidos</h3>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h3 className="mb-0">Pagos próximos y vencidos</h3>
+        <Button variant="success" onClick={() => setMostrarRecordar(true)} disabled={vencidos.length === 0}>
+          <FaWhatsapp className="me-1" />
+          Recordar por WhatsApp ({vencidos.length})
+        </Button>
+      </div>
+
+      {mensaje && (
+        <Alert variant={mensaje.tipo} onClose={() => setMensaje(null)} dismissible>
+          {mensaje.texto}
+        </Alert>
+      )}
 
       {vencidos.length > 0 && (
         <div className="alert alert-danger py-2">
@@ -180,6 +216,54 @@ export function Gestion() {
           )}
         </>
       )}
+
+      <Modal show={mostrarRecordar} onHide={() => setMostrarRecordar(false)} size="lg" centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Recordatorios de WhatsApp ({vencidos.length})</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="d-flex justify-content-end mb-2">
+            <Button size="sm" variant="outline-primary" onClick={copiarRecordatorios}>
+              <MdContentCopy className="me-1" />
+              Copiar todos los mensajes
+            </Button>
+          </div>
+          <Table striped bordered hover responsive>
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Teléfono</th>
+                <th>Mensaje</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {vencidos.map((c) => (
+                <tr key={c.id}>
+                  <td>{c.nombre}</td>
+                  <td>{c.telefono || "—"}</td>
+                  <td className="small">{mensajeWhatsapp(c)}</td>
+                  <td>
+                    {whatsappLink(c.telefono) ? (
+                      <Button
+                        size="sm"
+                        variant="success"
+                        onClick={() => window.open(whatsappLink(c.telefono, mensajeWhatsapp(c)), "_blank")}
+                      >
+                        <FaWhatsapp className="me-1" />
+                        Abrir
+                      </Button>
+                    ) : (
+                      <span className="text-muted small">Sin teléfono</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+          {vencidos.length === 0 && <p className="text-muted">No hay clientes vencidos.</p>}
+        </Modal.Body>
+      </Modal>
     </div>
   );
 }

@@ -513,7 +513,7 @@ function startServer(port = PORT) {
   });
 }
 
-module.exports = { app, startServer };
+module.exports = { app, startServer, crearBackup };
 
 // Solo arranca automáticamente si se ejecuta directo (node server.js).
 if (require.main === module) {

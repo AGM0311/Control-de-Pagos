@@ -109,6 +109,31 @@ export function Reportes() {
     setMensaje({ tipo: "success", texto: "Pagos exportados a CSV." });
   };
 
+  const descargarReporteMensual = () => {
+    const reporte = {
+      generado: new Date().toISOString(),
+      resumen: {
+        totalClientes: clientes.length,
+        activos,
+        vencidos,
+        ingresosMes,
+        totalHistorico,
+      },
+      ingresosPorMes: porMes,
+      clientesPorPlan: porPlan,
+    };
+    const blob = new Blob([JSON.stringify(reporte, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `reporte-mensual-${hoyISO()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setMensaje({ tipo: "success", texto: "Reporte mensual descargado." });
+  };
+
   return (
     <div className="p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -121,6 +146,10 @@ export function Reportes() {
           <Button variant="outline-primary" onClick={exportarPagosCSV}>
             <MdDownload className="me-1" />
             Exportar pagos (CSV)
+          </Button>
+          <Button variant="outline-secondary" onClick={descargarReporteMensual}>
+            <MdDownload className="me-1" />
+            Reporte mensual (JSON)
           </Button>
         </div>
       </div>
