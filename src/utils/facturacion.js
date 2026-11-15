@@ -1,9 +1,9 @@
 // Lógica de facturación mensual para clientes de internet (ISP).
 //
 // Cada cliente paga una tarifa mensual y tiene un "día de corte" (fechaCorte,
-// un día del 1 al 28). Se considera "al día" si registró al menos un pago en el
-// periodo de facturación vigente. Estas funciones centralizan el cálculo para
-// que no esté duplicado en los distintos componentes.
+// un día del 1 al 28). Se considera "al día" si su último pago es posterior al
+// último corte que debería haber pagado. Estas funciones centralizan el cálculo
+// para no duplicarlo entre pantallas.
 
 const MS_DIA = 1000 * 60 * 60 * 24;
 
@@ -22,8 +22,9 @@ function soloDia(fecha) {
 // Estado de pago de un cliente:
 //  - vencimiento: próxima fecha de corte.
 //  - diffDias: días que faltan para el próximo corte (siempre >= 0).
-//  - vencido: true si ya pasó su corte y no pagó el periodo correspondiente.
-//  - diasAtraso: días de atraso (0 si no está vencido).
+//  - vencido: true si el último corte ya pasó y no registró ningún pago posterior.
+//  - diasAtraso: días de atraso (0 si está al día).
+//  - ultimoPago: fecha del último pago (o null).
 export function estadoPago(cliente, hoy = new Date()) {
   const corte = diaCorte(cliente);
   const hoyDia = soloDia(hoy);
@@ -31,26 +32,34 @@ export function estadoPago(cliente, hoy = new Date()) {
   const corteEsteMes = new Date(hoy.getFullYear(), hoy.getMonth(), corte);
   const corteMesPasado = new Date(hoy.getFullYear(), hoy.getMonth() - 1, corte);
 
-  const vencimiento = corteEsteMes > hoyDia ? corteEsteMes : new Date(hoy.getFullYear(), hoy.getMonth() + 1, corte);
+  // Próximo vencimiento (siempre en el futuro).
+  const vencimiento = corteEsteMes > hoyDia
+    ? corteEsteMes
+    : new Date(hoy.getFullYear(), hoy.getMonth() + 1, corte);
   const diffDias = Math.round((soloDia(vencimiento) - hoyDia) / MS_DIA);
 
-  let vencido = false;
-  let diasAtraso = 0;
+  // Último corte: el ciclo que ya debería estar pagado.
+  const ultimoCorte = corteEsteMes <= hoyDia ? corteEsteMes : corteMesPasado;
 
-  // Si el corte de este mes ya pasó, el cliente debía haber pagado el periodo
-  // [corteMesPasado, corteEsteMes). Si no hay pago en ese rango, está vencido.
-  if (corteEsteMes <= hoyDia) {
-    const pagoEnPeriodo = (cliente?.pagos || []).some((p) => {
-      const d = new Date(p.fecha);
-      return !Number.isNaN(d.getTime()) && d >= corteMesPasado && d < corteEsteMes;
-    });
-    if (!pagoEnPeriodo) {
-      vencido = true;
-      diasAtraso = Math.round((hoyDia - corteEsteMes) / MS_DIA);
+  // Último pago registrado (el más reciente).
+  let ultimoPago = null;
+  (cliente?.pagos || []).forEach((p) => {
+    const d = new Date(p.fecha);
+    if (!Number.isNaN(d.getTime()) && (!ultimoPago || d > ultimoPago)) {
+      ultimoPago = d;
     }
-  }
+  });
 
-  return { vencimiento, diffDias, vencido, diasAtraso };
+  // Está al día si pagó a partir del último corte (aunque haya sido tarde).
+  const vencido = !ultimoPago || ultimoPago < ultimoCorte;
+  const diasAtraso = vencido ? Math.round((hoyDia - soloDia(ultimoCorte)) / MS_DIA) : 0;
+
+  return { vencimiento, diffDias, vencido, diasAtraso, ultimoPago };
+}
+
+// Ordena los pagos por fecha, del más reciente al más antiguo.
+export function ordenarPagosDesc(pagos) {
+  return [...(pagos || [])].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 }
 
 // Suma de los pagos realizados en el mes actual.
@@ -67,7 +76,7 @@ export function ingresosDelMes(clientes, hoy = new Date()) {
   return total;
 }
 
-// Total cobrado en un periodo arbitrario (por defecto, el mes actual).
+// Total cobrado en un periodo arbitrario.
 export function ingresosEnPeriodo(clientes, desde, hasta) {
   let total = 0;
   (clientes || []).forEach((c) => {
@@ -92,4 +101,12 @@ export function formatearFecha(fecha) {
 export function formatearMonto(monto) {
   const n = Number(monto) || 0;
   return n.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
+}
+
+// Fecha de hoy en formato "aaaa-mm-dd" (para el valor de un <input type="date">).
+export function hoyISO() {
+  const d = new Date();
+  const mes = String(d.getMonth() + 1).padStart(2, "0");
+  const dia = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mes}-${dia}`;
 }

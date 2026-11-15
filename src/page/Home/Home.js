@@ -48,7 +48,7 @@ export function Home() {
         (c.ip || "").toString().includes(busqueda) ||
         (c.telefono || "").toString().includes(busqueda)
     )
-    .sort((a, b) => Number(a.ip) - Number(b.ip));
+    .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || "", "es"));
 
   const datosEstado = [
     { name: "Activos", value: activos },

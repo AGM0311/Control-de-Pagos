@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { Table } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
+import { Table, Button, Form } from "react-bootstrap";
+import { MdAttachMoney } from "react-icons/md";
 import api from "../../../api/api";
 import { API_ROUTES } from "../../../utils/constantes";
 import { estadoPago, formatearFecha, formatearMonto } from "../../../utils/facturacion";
 
 export function Gestion() {
+  const navigate = useNavigate();
   const [clientes, setClientes] = useState([]);
   const [alertas, setAlertas] = useState([]);
+  const [busqueda, setBusqueda] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,9 +36,20 @@ export function Gestion() {
 
   if (loading) return <p className="p-4">Cargando clientes y alertas...</p>;
 
+  const filtro = busqueda.trim().toLowerCase();
+
   const conEstado = clientes
     .map((c) => ({ ...c, estado: estadoPago(c) }))
-    .filter((c) => c.estado.vencido || c.estado.diffDias <= 7)
+    .filter((c) => {
+      const coincide =
+        !filtro ||
+        (c.nombre || "").toLowerCase().includes(filtro) ||
+        (c.ip || "").toString().toLowerCase().includes(filtro) ||
+        (c.telefono || "").toString().toLowerCase().includes(filtro);
+      // Con búsqueda: solo coincidencias. Sin búsqueda: vencidos + próximos 7 días.
+      if (filtro) return coincide;
+      return c.estado.vencido || c.estado.diffDias <= 7;
+    })
     .sort((a, b) => a.estado.diffDias - b.estado.diffDias);
 
   const vencidos = conEstado.filter((c) => c.estado.vencido);
@@ -42,18 +57,30 @@ export function Gestion() {
 
   const alertasDe = (clienteId) => alertas.filter((a) => a.clienteId === clienteId);
 
+  const cobrar = (id) => navigate(`/informe?cliente=${id}`);
+
   const renderFila = (cliente) => {
     const alertasCliente = alertasDe(cliente.id);
     return (
       <tr
         key={cliente.id}
-        style={{ backgroundColor: cliente.estado.vencido ? "#f8d7da" : cliente.estado.diffDias <= 3 ? "#fff3cd" : "transparent" }}
+        style={{
+          backgroundColor: cliente.estado.vencido
+            ? "#f8d7da"
+            : cliente.estado.diffDias <= 3
+              ? "#fff3cd"
+              : "transparent",
+        }}
       >
         <td>{cliente.nombre}</td>
         <td>{cliente.plan || "—"}</td>
         <td>{formatearMonto(cliente.precio)}</td>
         <td>{formatearFecha(cliente.estado.vencimiento)}</td>
-        <td>{cliente.estado.vencido ? `Vencido hace ${cliente.estado.diasAtraso} días` : `En ${cliente.estado.diffDias} días`}</td>
+        <td>
+          {cliente.estado.vencido
+            ? `Vencido hace ${cliente.estado.diasAtraso} días`
+            : `En ${cliente.estado.diffDias} días`}
+        </td>
         <td>
           {alertasCliente.length > 0 ? (
             <ul className="mb-0">
@@ -65,6 +92,12 @@ export function Gestion() {
             <span className="text-muted">Sin alertas</span>
           )}
         </td>
+        <td>
+          <Button variant="success" size="sm" onClick={() => cobrar(cliente.id)}>
+            <MdAttachMoney className="me-1" />
+            Cobrar
+          </Button>
+        </td>
       </tr>
     );
   };
@@ -73,7 +106,16 @@ export function Gestion() {
     <div className="p-4">
       <h3 className="mb-3">Pagos próximos y vencidos</h3>
 
-      {vencidos.length === 0 && porVencer.length === 0 ? (
+      <Form.Control
+        type="text"
+        className="mb-3"
+        style={{ maxWidth: "360px" }}
+        placeholder="Buscar por nombre, IP o teléfono…"
+        value={busqueda}
+        onChange={(e) => setBusqueda(e.target.value)}
+      />
+
+      {conEstado.length === 0 ? (
         <p>No hay pagos próximos a vencer.</p>
       ) : (
         <>
@@ -89,6 +131,7 @@ export function Gestion() {
                     <th>Corte</th>
                     <th>Atraso</th>
                     <th>Alertas</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>{vencidos.map(renderFila)}</tbody>
@@ -108,6 +151,7 @@ export function Gestion() {
                     <th>Próximo pago</th>
                     <th>Días</th>
                     <th>Alertas</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>{porVencer.map(renderFila)}</tbody>

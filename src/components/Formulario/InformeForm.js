@@ -1,14 +1,24 @@
 import React, { useState, useEffect } from "react";
-import { Form, Button, Table, Row, Col, Alert } from "react-bootstrap";
+import { useSearchParams } from "react-router-dom";
+import { Form, Button, Table, Row, Col, Alert, Badge } from "react-bootstrap";
 import { MdDelete } from "react-icons/md";
 import api from "../../api/api";
 import { API_ROUTES, METODOS_PAGO } from "../../utils/constantes";
-import { formatearFecha, formatearMonto } from "../../utils/facturacion";
+import {
+  estadoPago,
+  ordenarPagosDesc,
+  formatearFecha,
+  formatearMonto,
+  hoyISO,
+} from "../../utils/facturacion";
 
 export function InformeForm() {
+  const [searchParams] = useSearchParams();
+  const clienteInicial = searchParams.get("cliente");
+
   const [clientes, setClientes] = useState([]);
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
-  const [fecha, setFecha] = useState("");
+  const [fecha, setFecha] = useState(hoyISO());
   const [monto, setMonto] = useState("");
   const [metodo, setMetodo] = useState(METODOS_PAGO[0]);
   const [loading, setLoading] = useState(true);
@@ -19,10 +29,10 @@ export function InformeForm() {
       const res = await api.get(API_ROUTES.CLIENTES.GET);
       const data = Array.isArray(res.data) ? res.data : [];
       setClientes(data);
-      if (clienteSeleccionado) {
-        const actualizado = data.find((c) => c.id === clienteSeleccionado.id);
-        setClienteSeleccionado(actualizado || null);
-      }
+      setClienteSeleccionado((prev) => {
+        const objetivo = prev?.id || clienteInicial;
+        return data.find((c) => c.id === objetivo) || (clienteInicial ? null : prev);
+      });
     } catch (err) {
       console.error(err);
       setMensaje({ tipo: "danger", texto: "No se pudieron cargar los clientes." });
@@ -36,6 +46,13 @@ export function InformeForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const seleccionarCliente = (id) => {
+    const c = clientes.find((cl) => cl.id === id);
+    setClienteSeleccionado(c || null);
+    if (c) setMonto(c.precio ? String(c.precio) : "");
+    setMensaje(null);
+  };
+
   const handleAgregarPago = async (e) => {
     e.preventDefault();
     setMensaje(null);
@@ -48,8 +65,7 @@ export function InformeForm() {
         metodo,
       });
       setClienteSeleccionado(res.data);
-      setFecha("");
-      setMonto("");
+      setFecha(hoyISO());
       setMetodo(METODOS_PAGO[0]);
       setMensaje({ tipo: "success", texto: "Pago registrado correctamente." });
       fetchClientes();
@@ -65,7 +81,13 @@ export function InformeForm() {
   const handleEliminarPago = async (index) => {
     if (!window.confirm("¿Eliminar este pago?")) return;
     try {
-      const res = await api.delete(API_ROUTES.PAGOS.DELETE(clienteSeleccionado.id, index));
+      // Los pagos se muestran ordenados por fecha desc, así que borramos sobre
+      // el arreglo original usando el índice real.
+      const pagosOriginales = clienteSeleccionado.pagos || [];
+      const ordenados = ordenarPagosDesc(pagosOriginales);
+      const pagoAEliminar = ordenados[index];
+      const indiceReal = pagosOriginales.indexOf(pagoAEliminar);
+      const res = await api.delete(API_ROUTES.PAGOS.DELETE(clienteSeleccionado.id, indiceReal));
       setClienteSeleccionado(res.data);
       fetchClientes();
     } catch (error) {
@@ -75,6 +97,10 @@ export function InformeForm() {
   };
 
   if (loading) return <p className="p-3">Cargando clientes...</p>;
+
+  const info = clienteSeleccionado ? estadoPago(clienteSeleccionado) : null;
+  const pagosOrdenados = clienteSeleccionado ? ordenarPagosDesc(clienteSeleccionado.pagos) : [];
+  const totalPagado = pagosOrdenados.reduce((acc, p) => acc + (Number(p.monto) || 0), 0);
 
   return (
     <div className="p-3 border rounded shadow-sm mb-4">
@@ -89,10 +115,7 @@ export function InformeForm() {
       <Form.Select
         className="mb-3"
         value={clienteSeleccionado?.id || ""}
-        onChange={(e) => {
-          const c = clientes.find((cl) => cl.id === e.target.value);
-          setClienteSeleccionado(c || null);
-        }}
+        onChange={(e) => seleccionarCliente(e.target.value)}
       >
         <option value="">Selecciona un cliente</option>
         {clientes.map((c) => (
@@ -102,8 +125,25 @@ export function InformeForm() {
         ))}
       </Form.Select>
 
-      {clienteSeleccionado && (
+      {clienteSeleccionado && info && (
         <>
+          <div className="p-2 bg-light rounded mb-3 d-flex flex-wrap gap-3">
+            <span>
+              <strong>Plan:</strong> {clienteSeleccionado.plan || "—"}
+            </span>
+            <span>
+              <strong>Precio:</strong> {formatearMonto(clienteSeleccionado.precio)}
+            </span>
+            <span>
+              <strong>Próximo pago:</strong> {formatearFecha(info.vencimiento)}
+            </span>
+            {info.vencido ? (
+              <Badge bg="danger">Vencido hace {info.diasAtraso} días</Badge>
+            ) : (
+              <Badge bg="success">Al día · faltan {info.diffDias} días</Badge>
+            )}
+          </div>
+
           <Form onSubmit={handleAgregarPago}>
             <Row className="mb-2">
               <Col md={3}>
@@ -137,8 +177,11 @@ export function InformeForm() {
             </Row>
           </Form>
 
-          <h5 className="mt-3">Historial de pagos — {clienteSeleccionado.nombre}</h5>
-          {clienteSeleccionado.pagos?.length > 0 ? (
+          <h5 className="mt-3">
+            Historial de pagos — {clienteSeleccionado.nombre}{" "}
+            <span className="text-muted fs-6">(total: {formatearMonto(totalPagado)})</span>
+          </h5>
+          {pagosOrdenados.length > 0 ? (
             <Table striped bordered hover responsive>
               <thead>
                 <tr>
@@ -149,7 +192,7 @@ export function InformeForm() {
                 </tr>
               </thead>
               <tbody>
-                {clienteSeleccionado.pagos.map((p, i) => (
+                {pagosOrdenados.map((p, i) => (
                   <tr key={i}>
                     <td>{formatearFecha(p.fecha)}</td>
                     <td>{formatearMonto(p.monto)}</td>

@@ -21,6 +21,7 @@ export function Registro() {
   const [clientes, setClientes] = useState([]);
   const [modoEdicion, setModoEdicion] = useState(false);
   const [mensaje, setMensaje] = useState(null);
+  const [busqueda, setBusqueda] = useState("");
   const [formData, setFormData] = useState(FORM_VACIO);
 
   const fetchClientes = async () => {
@@ -100,9 +101,18 @@ export function Registro() {
     setMensaje(null);
   };
 
+  const filtro = busqueda.trim().toLowerCase();
+
   const clientesConEstado = clientes
     .map((c) => ({ ...c, estadoPago: estadoPago(c) }))
-    .sort((a, b) => a.estadoPago.diffDias - b.estadoPago.diffDias);
+    .filter(
+      (c) =>
+        !filtro ||
+        (c.nombre || "").toLowerCase().includes(filtro) ||
+        (c.ip || "").toString().toLowerCase().includes(filtro) ||
+        (c.telefono || "").toString().toLowerCase().includes(filtro)
+    )
+    .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || "", "es"));
 
   return (
     <div className="p-4">
@@ -205,6 +215,15 @@ export function Registro() {
       </Form>
 
       <hr />
+
+      <Form.Control
+        type="text"
+        className="mb-3"
+        style={{ maxWidth: "360px" }}
+        placeholder="Buscar por nombre, IP o teléfono…"
+        value={busqueda}
+        onChange={(e) => setBusqueda(e.target.value)}
+      />
 
       <Table striped bordered hover responsive>
         <thead>
