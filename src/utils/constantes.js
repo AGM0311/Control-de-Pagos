@@ -19,6 +19,12 @@ export const API_ROUTES = {
   },
   IMPORTAR: "/importar-clientes",
   RESTAURAR: "/restaurar-clientes",
+  BACKUPS: {
+    GET: "/backups",
+    POST: "/backups",
+    DELETE: (id) => `/backups/${id}`,
+    RESTORE: (id) => `/backups/${id}/restore`,
+  },
 };
 
 // Métodos de pago disponibles.

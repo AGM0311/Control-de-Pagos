@@ -1,9 +1,9 @@
-import React, { useState } from "react";
-import { Alert, Card, Button } from "react-bootstrap";
-import { MdDownload, MdUpload, MdRestore } from "react-icons/md";
+import React, { useState, useEffect } from "react";
+import { Alert, Card, Button, Table } from "react-bootstrap";
+import { MdDownload, MdUpload, MdRestore, MdBackup, MdDelete } from "react-icons/md";
 import api from "../api/api";
 import { API_ROUTES } from "../utils/constantes";
-import { hoyISO } from "../utils/facturacion";
+import { hoyISO, formatearFecha } from "../utils/facturacion";
 
 export function ImportarClientes() {
   const [archivo, setArchivo] = useState(null);
@@ -11,6 +11,65 @@ export function ImportarClientes() {
   const [archivoRespaldo, setArchivoRespaldo] = useState(null);
   const [mensajeRespaldo, setMensajeRespaldo] = useState(null);
   const [mensajeDescarga, setMensajeDescarga] = useState(null);
+
+  // Respaldos automáticos
+  const [backups, setBackups] = useState([]);
+  const [mensajeBackups, setMensajeBackups] = useState(null);
+
+  const fetchBackups = async () => {
+    try {
+      const res = await api.get(API_ROUTES.BACKUPS.GET);
+      setBackups(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      console.error("Error al obtener respaldos:", error);
+      setBackups([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchBackups();
+  }, []);
+
+  const hacerBackupAhora = async () => {
+    setMensajeBackups(null);
+    try {
+      await api.post(API_ROUTES.BACKUPS.POST);
+      setMensajeBackups({ tipo: "success", texto: "Respaldo creado correctamente." });
+      fetchBackups();
+    } catch (error) {
+      console.error(error);
+      setMensajeBackups({ tipo: "danger", texto: "No se pudo crear el respaldo." });
+    }
+  };
+
+  const restaurarBackup = async (b) => {
+    if (
+      !window.confirm(
+        `¿Restaurar el respaldo de ${formatearFecha(b.fecha)}? Se reemplazarán los datos actuales.`
+      )
+    ) {
+      return;
+    }
+    try {
+      await api.post(API_ROUTES.BACKUPS.RESTORE(b.id));
+      setMensajeBackups({ tipo: "success", texto: "Respaldo restaurado correctamente." });
+      fetchBackups();
+    } catch (error) {
+      console.error(error);
+      setMensajeBackups({ tipo: "danger", texto: "No se pudo restaurar el respaldo." });
+    }
+  };
+
+  const eliminarBackup = async (b) => {
+    if (!window.confirm("¿Eliminar este respaldo?")) return;
+    try {
+      await api.delete(API_ROUTES.BACKUPS.DELETE(b.id));
+      fetchBackups();
+    } catch (error) {
+      console.error(error);
+      setMensajeBackups({ tipo: "danger", texto: "No se pudo eliminar el respaldo." });
+    }
+  };
 
   // ---- Importar desde Word/Excel ----
   const subirArchivo = async () => {
@@ -87,14 +146,66 @@ export function ImportarClientes() {
 
   return (
     <div className="p-4">
-      <h3>Importar, descargar y restaurar clientes</h3>
+      <h3>Respaldos e importación</h3>
+
+      {/* Respaldos automáticos */}
+      <Card className="p-3 mb-4">
+        <div className="d-flex justify-content-between align-items-center mb-2">
+          <h5 className="mb-0">Respaldos automáticos</h5>
+          <Button variant="primary" onClick={hacerBackupAhora}>
+            <MdBackup className="me-1" />
+            Hacer respaldo ahora
+          </Button>
+        </div>
+        <p className="text-muted">
+          La app guarda un respaldo automático cada vez que se abre (conserva los últimos 30).
+          Aquí puedes crear uno manual, restaurar uno anterior o eliminarlo.
+        </p>
+
+        {mensajeBackups && (
+          <Alert variant={mensajeBackups.tipo} onClose={() => setMensajeBackups(null)} dismissible>
+            {mensajeBackups.texto}
+          </Alert>
+        )}
+
+        {backups.length === 0 ? (
+          <p className="text-muted">Todavía no hay respaldos.</p>
+        ) : (
+          <Table striped bordered hover responsive>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Clientes</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {backups.map((b) => (
+                <tr key={b.id}>
+                  <td>{formatearFecha(b.fecha)}</td>
+                  <td>{b.clientes}</td>
+                  <td>
+                    <Button variant="outline-success" size="sm" className="me-2" onClick={() => restaurarBackup(b)}>
+                      <MdRestore className="me-1" />
+                      Restaurar
+                    </Button>
+                    <Button variant="outline-danger" size="sm" onClick={() => eliminarBackup(b)}>
+                      <MdDelete />
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        )}
+      </Card>
 
       {/* Descargar respaldo */}
       <Card className="p-3 mb-4">
         <h5>Descargar respaldo (.json)</h5>
         <p className="text-muted">
-          Guarda una copia de <strong>todos los clientes</strong> (con sus pagos) en un archivo.
-          Úsalo para pasarlo a otra computadora o como respaldo de seguridad.
+          Guarda una copia de <strong>todos los clientes</strong> (con sus pagos) en un archivo,
+          para pasarla a otra computadora o guardarla fuera de la app.
         </p>
 
         {mensajeDescarga && (

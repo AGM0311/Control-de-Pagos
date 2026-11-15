@@ -33,8 +33,10 @@ app.use(express.json());
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
 const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, "uploads");
 const BUILD_DIR = path.join(__dirname, "build");
+const BACKUPS_DIR = process.env.BACKUPS_DIR || path.join(path.dirname(DATA_DIR), "backups");
 fs.mkdirSync(DATA_DIR, { recursive: true });
 fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+fs.mkdirSync(BACKUPS_DIR, { recursive: true });
 
 const upload = multer({ dest: UPLOADS_DIR });
 
@@ -345,6 +347,107 @@ app.post("/restaurar-clientes", (req, res) => {
   res.json({ mensaje: "Respaldo restaurado", agregados });
 });
 
+// ---------------------------------------------------------------- respaldos
+
+function listarBackups() {
+  try {
+    fs.mkdirSync(BACKUPS_DIR, { recursive: true });
+    return fs
+      .readdirSync(BACKUPS_DIR)
+      .filter((f) => /^backup-[0-9-]+\.json$/.test(f))
+      .map((f) => {
+        const full = path.join(BACKUPS_DIR, f);
+        const stat = fs.statSync(full);
+        let contenido = null;
+        try {
+          contenido = JSON.parse(fs.readFileSync(full, "utf8"));
+        } catch (_) {
+          contenido = null;
+        }
+        return {
+          id: f,
+          fecha: contenido?.fecha || stat.mtime.toISOString(),
+          tamano: stat.size,
+          clientes: Array.isArray(contenido?.clientes) ? contenido.clientes.length : 0,
+          alertas: Array.isArray(contenido?.alertas) ? contenido.alertas.length : 0,
+        };
+      })
+      .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+  } catch (error) {
+    console.error("Error listando respaldos:", error.message);
+    return [];
+  }
+}
+
+function crearBackup() {
+  fs.mkdirSync(BACKUPS_DIR, { recursive: true });
+  const f = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  const nombre = `backup-${f.getFullYear()}-${pad(f.getMonth() + 1)}-${pad(f.getDate())}-${pad(f.getHours())}-${pad(f.getMinutes())}-${pad(f.getSeconds())}.json`;
+  const backup = {
+    fecha: f.toISOString(),
+    clientes: readData(FILE_CLIENTES),
+    alertas: readData(FILE_ALERTAS),
+  };
+  fs.writeFileSync(path.join(BACKUPS_DIR, nombre), JSON.stringify(backup, null, 2));
+
+  // Conservar solo los últimos 30 respaldos.
+  listarBackups()
+    .slice(30)
+    .forEach((b) => {
+      try {
+        fs.unlinkSync(path.join(BACKUPS_DIR, b.id));
+      } catch (_) {}
+    });
+
+  return {
+    id: nombre,
+    fecha: f.toISOString(),
+    clientes: backup.clientes.length,
+    alertas: backup.alertas.length,
+  };
+}
+
+function nombreBackupValido(id) {
+  return /^backup-[0-9-]+\.json$/.test(id) && !id.includes("..");
+}
+
+app.get("/backups", (_req, res) => res.json(listarBackups()));
+
+app.post("/backups", (_req, res) => res.json(crearBackup()));
+
+app.delete("/backups/:id", (req, res) => {
+  if (!nombreBackupValido(req.params.id)) return res.status(400).json({ error: "Nombre de respaldo inválido" });
+  const ruta = path.join(BACKUPS_DIR, req.params.id);
+  if (!fs.existsSync(ruta)) return res.status(404).json({ error: "Respaldo no encontrado" });
+  fs.unlinkSync(ruta);
+  res.json({ mensaje: "Respaldo eliminado" });
+});
+
+app.post("/backups/:id/restore", (req, res) => {
+  if (!nombreBackupValido(req.params.id)) return res.status(400).json({ error: "Nombre de respaldo inválido" });
+  const ruta = path.join(BACKUPS_DIR, req.params.id);
+  if (!fs.existsSync(ruta)) return res.status(404).json({ error: "Respaldo no encontrado" });
+
+  let backup;
+  try {
+    backup = JSON.parse(fs.readFileSync(ruta, "utf8"));
+  } catch (_) {
+    return res.status(500).json({ error: "Respaldo corrupto" });
+  }
+
+  // Antes de restaurar, guarda un respaldo del estado actual (por si acaso).
+  crearBackup();
+
+  if (Array.isArray(backup.clientes)) writeData(FILE_CLIENTES, backup.clientes);
+  if (Array.isArray(backup.alertas)) writeData(FILE_ALERTAS, backup.alertas);
+
+  res.json({
+    mensaje: "Respaldo restaurado",
+    clientes: Array.isArray(backup.clientes) ? backup.clientes.length : 0,
+  });
+});
+
 // ---------------------------------------------------------------- servidor
 
 // Inicia el servidor Express y, si existe el frontend compilado (`build/`),
@@ -364,6 +467,14 @@ function startServer(port = PORT) {
 
   app.listen(port, () => {
     console.log(`Servidor corriendo en http://localhost:${port}`);
+
+    // Respaldo automático al arrancar (solo si ya hay clientes cargados).
+    try {
+      const datos = readData(FILE_CLIENTES);
+      if (datos.length > 0) crearBackup();
+    } catch (error) {
+      console.error("Error al crear respaldo automático:", error.message);
+    }
   });
 }
 
