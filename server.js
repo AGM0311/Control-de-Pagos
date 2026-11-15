@@ -95,8 +95,8 @@ function validarCliente(body, parcial = false) {
   }
   if (body.fechaCorte !== undefined) {
     const corte = Number(body.fechaCorte);
-    if (!Number.isInteger(corte) || corte < 1 || corte > 28) {
-      errores.push("'fechaCorte' debe ser un entero entre 1 y 28");
+    if (!Number.isInteger(corte) || corte < 1 || corte > 31) {
+      errores.push("'fechaCorte' debe ser un entero entre 1 y 31");
     }
   }
   if (body.estado !== undefined && !["activo", "suspendido"].includes(body.estado)) {
@@ -188,6 +188,33 @@ app.delete("/clientes/:id", (req, res) => {
   }
   writeData(FILE_CLIENTES, clientes);
   res.json({ mensaje: "Cliente eliminado" });
+});
+
+// Corrige el día de corte de varios clientes a la vez. Es útil después de
+// importar, porque la importación crea a todos con corte el día 1.
+//   { fechaCorte: 20 }                  -> aplica a TODOS los clientes.
+//   { fechaCorte: 20, soloDiaActual: 1 } -> solo a los que hoy tienen corte 1.
+app.post("/clientes-corte", (req, res) => {
+  const { fechaCorte, soloDiaActual } = req.body || {};
+  const corte = Number(fechaCorte);
+  if (!Number.isInteger(corte) || corte < 1 || corte > 31) {
+    return res.status(400).json({ mensaje: "'fechaCorte' debe ser un entero entre 1 y 31" });
+  }
+
+  const clientes = readData(FILE_CLIENTES);
+  const filtro = soloDiaActual === undefined ? null : Number(soloDiaActual);
+  let actualizados = 0;
+
+  clientes.forEach((c) => {
+    if (filtro !== null && Number(c.fechaCorte) !== filtro) return;
+    if (Number(c.fechaCorte) !== corte) {
+      c.fechaCorte = corte;
+      actualizados++;
+    }
+  });
+
+  if (actualizados > 0) writeData(FILE_CLIENTES, clientes);
+  res.json({ actualizados });
 });
 
 // ---------------------------------------------------------------- pagos

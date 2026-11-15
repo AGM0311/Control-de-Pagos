@@ -21,11 +21,11 @@ function parseFecha(valor) {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-// Día de corte normalizado (entre 1 y 28 para evitar problemas con meses cortos).
+// Día de corte normalizado (entre 1 y 31).
 export function diaCorte(cliente) {
   const d = Number(cliente?.fechaCorte);
   if (!Number.isInteger(d) || d < 1) return 1;
-  return d > 28 ? 28 : d;
+  return d > 31 ? 31 : d;
 }
 
 // Normaliza una fecha a medianoche (sin hora) para comparar días.
@@ -33,27 +33,34 @@ function soloDia(fecha) {
   return new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
 }
 
-// Suma un mes a una fecha conservando el día (si el mes destino es más corto,
-// usa el último día de ese mes). Ej: 31 de enero + 1 mes = 28/29 de febrero.
-export function sumarUnMes(fecha) {
-  const dia = fecha.getDate();
-  const destino = new Date(fecha.getFullYear(), fecha.getMonth() + 1, 1);
-  const ultimoDia = new Date(destino.getFullYear(), destino.getMonth() + 1, 0).getDate();
-  destino.setDate(Math.min(dia, ultimoDia));
-  return soloDia(destino);
+// Fecha del día de corte dentro de un mes concreto. Si el corte es 29, 30 o 31
+// y el mes es más corto, se usa el último día de ese mes.
+function corteEnMes(anio, mes, corte) {
+  const ultimoDia = new Date(anio, mes + 1, 0).getDate();
+  return new Date(anio, mes, Math.min(corte, ultimoDia));
+}
+
+// Primer día de corte ESTRICTAMENTE posterior a una fecha. Es la fecha en la
+// que el cliente debe volver a pagar después de haber pagado en `fecha`.
+export function siguienteCorte(fecha, corte) {
+  const deEsteMes = corteEnMes(fecha.getFullYear(), fecha.getMonth(), corte);
+  if (deEsteMes > fecha) return deEsteMes;
+  return corteEnMes(fecha.getFullYear(), fecha.getMonth() + 1, corte);
 }
 
 // Estado de pago de un cliente.
 //
-// Regla principal (la que espera el negocio): cada pago cubre UN MES, así que el
-// próximo pago vence un mes después del último pago. Ejemplo: si el último pago
-// fue el 20 de octubre, el próximo vence el 20 de noviembre. Hasta ese día el
-// cliente NO está vencido, aunque su "día de corte" sea otro.
+// El día de corte es fijo para cada cliente y el pago es un hecho aparte. Un
+// pago cubre al cliente hasta el siguiente día de corte posterior a la fecha
+// del pago. Ejemplos con corte el día 20:
+//   - pagó el 20 de octubre  -> su próximo pago vence el 20 de noviembre.
+//   - pagó tarde el 25 de octubre -> sigue cubierto hasta el 20 de noviembre.
+//   - pagó el 5 de octubre -> vence el 20 de octubre (el corte no cambia).
 //
-// Si el cliente no tiene ningún pago registrado, se usa el día de corte como
-// referencia para calcular el atraso.
+// Si el cliente no tiene ningún pago registrado, se considera vencido desde el
+// corte más reciente.
 //
-//  - vencimiento: fecha en que vence el próximo pago.
+//  - vencimiento: fecha en que vence (o venció) el pago.
 //  - diffDias: días que faltan para el vencimiento (>= 0).
 //  - vencido: true si ya pasó la fecha de vencimiento.
 //  - diasAtraso: días transcurridos desde el vencimiento (0 si está al día).
@@ -83,25 +90,23 @@ export function estadoPago(cliente, hoy = new Date()) {
   let vencido;
 
   if (ultimoPago) {
-    // El pago cubre un mes: vence un mes después del último pago.
-    vencimiento = sumarUnMes(soloDia(ultimoPago));
+    // El pago cubre hasta el siguiente corte después de la fecha de pago.
+    vencimiento = siguienteCorte(soloDia(ultimoPago), corte);
     vencido = hoyDia > vencimiento;
     diasAtraso = vencido ? Math.round((hoyDia - vencimiento) / MS_DIA) : 0;
   } else {
-    // Sin pagos registrados: usamos el día de corte.
-    const corteEsteMes = new Date(hoy.getFullYear(), hoy.getMonth(), corte);
-    const corteMesPasado = new Date(hoy.getFullYear(), hoy.getMonth() - 1, corte);
-    vencimiento = corteEsteMes >= hoyDia
-      ? corteEsteMes
-      : new Date(hoy.getFullYear(), hoy.getMonth() + 1, corte);
-    const ultimoCorte = corteEsteMes < hoyDia ? corteEsteMes : corteMesPasado;
-    vencido = true; // nunca ha pagado
-    diasAtraso = Math.max(0, Math.round((hoyDia - soloDia(ultimoCorte)) / MS_DIA));
+    // Sin pagos registrados: vencido desde el corte más reciente.
+    const corteEsteMes = corteEnMes(hoy.getFullYear(), hoy.getMonth(), corte);
+    const corteMesPasado = corteEnMes(hoy.getFullYear(), hoy.getMonth() - 1, corte);
+    const ultimoCorte = corteEsteMes <= hoyDia ? corteEsteMes : corteMesPasado;
+    vencimiento = ultimoCorte;
+    vencido = true;
+    diasAtraso = Math.max(0, Math.round((hoyDia - ultimoCorte) / MS_DIA));
   }
 
   const diffDias = Math.max(0, Math.round((soloDia(vencimiento) - hoyDia) / MS_DIA));
 
-  return { vencimiento, diffDias, vencido, diasAtraso, ultimoPago };
+  return { vencimiento, diffDias, vencido, diasAtraso, ultimoPago, corte };
 }
 
 // Ordena los pagos por fecha, del más reciente al más antiguo.

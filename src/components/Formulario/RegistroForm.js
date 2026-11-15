@@ -28,6 +28,7 @@ export function Registro() {
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
   const [formData, setFormData] = useState(FORM_VACIO);
+  const [corteMasivo, setCorteMasivo] = useState("");
 
   // Alertas / notas por cliente
   const [clienteNotas, setClienteNotas] = useState(null);
@@ -163,6 +164,42 @@ export function Registro() {
     }
   };
 
+  // Corrige de golpe el día de corte de los clientes que quedaron con el valor
+  // por defecto de la importación (día 1).
+  const aplicarCorteMasivo = async () => {
+    const dia = Number(corteMasivo);
+    if (!Number.isInteger(dia) || dia < 1 || dia > 31) {
+      setMensaje({ tipo: "danger", texto: "Escribe un día de corte entre 1 y 31." });
+      return;
+    }
+    const cantidad = clientes.filter((c) => Number(c.fechaCorte) === 1).length;
+    if (
+      !window.confirm(
+        `¿Cambiar el día de corte a ${dia} para los ${cantidad} cliente(s) que hoy tienen corte el día 1?`
+      )
+    ) {
+      return;
+    }
+    try {
+      const res = await api.post(API_ROUTES.CLIENTES.CORTE_MASIVO, {
+        fechaCorte: dia,
+        soloDiaActual: 1,
+      });
+      setMensaje({
+        tipo: "success",
+        texto: `Se actualizó el día de corte de ${res.data.actualizados} cliente(s).`,
+      });
+      setCorteMasivo("");
+      fetchClientes();
+    } catch (error) {
+      console.error(error);
+      setMensaje({
+        tipo: "danger",
+        texto: error.response?.data?.mensaje || "No se pudo actualizar el día de corte.",
+      });
+    }
+  };
+
   const filtro = busqueda.trim().toLowerCase();
 
   const clientesConEstado = clientes
@@ -182,6 +219,8 @@ export function Registro() {
         (c.telefono || "").toString().toLowerCase().includes(filtro)
     )
     .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || "", "es"));
+
+  const cantidadCorteUno = clientes.filter((c) => Number(c.fechaCorte) === 1).length;
 
   return (
     <div className="p-4">
@@ -254,10 +293,13 @@ export function Registro() {
             <Form.Control
               type="number"
               min="1"
-              max="28"
+              max="31"
               value={formData.fechaCorte}
               onChange={(e) => setFormData({ ...formData, fechaCorte: e.target.value })}
             />
+            <Form.Text className="text-muted">
+              Día del mes en que vence su pago (1–31).
+            </Form.Text>
           </Col>
           <Col md={3}>
             <Form.Label>Estado</Form.Label>
@@ -360,6 +402,27 @@ export function Registro() {
         </span>
       </div>
 
+      {cantidadCorteUno > 0 && (
+        <div className="alert alert-info d-flex flex-wrap align-items-center gap-2">
+          <span className="me-2">
+            <strong>{cantidadCorteUno}</strong> cliente(s) tienen día de corte <strong>1</strong> (el
+            valor por defecto de la importación). Si su corte real es otro día, corrígelo aquí:
+          </span>
+          <Form.Control
+            type="number"
+            min="1"
+            max="31"
+            style={{ maxWidth: "110px" }}
+            placeholder="Día"
+            value={corteMasivo}
+            onChange={(e) => setCorteMasivo(e.target.value)}
+          />
+          <Button size="sm" variant="primary" onClick={aplicarCorteMasivo}>
+            Aplicar a esos {cantidadCorteUno}
+          </Button>
+        </div>
+      )}
+
       <Form.Control
         type="text"
         className="mb-3"
@@ -408,7 +471,14 @@ export function Registro() {
                 <td>{formatearFecha(vencimiento)}</td>
                 <td>
                   {vencido ? (
-                    <span className="badge bg-danger">Vencido {cliente.estadoPago.diasAtraso} días</span>
+                    <span
+                      className="badge bg-danger"
+                      title={`Su pago venció el ${formatearFecha(vencimiento)} (corte el día ${cliente.fechaCorte}).`}
+                    >
+                      Vencido {cliente.estadoPago.diasAtraso} días
+                    </span>
+                  ) : diffDias === 0 ? (
+                    <span className="badge bg-warning text-dark">Vence hoy</span>
                   ) : (
                     <span className="text-muted">{diffDias} días</span>
                   )}

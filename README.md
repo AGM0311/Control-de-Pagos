@@ -41,8 +41,9 @@ Abre tu navegador en <http://localhost:3000>.
 - **Inicio / Panel:** total de clientes, activos, vencidos e ingresos del mes,
   gráfica de estado y tabla con búsqueda por nombre, IP o teléfono.
 - **Clientes:** alta, edición y baja. Cada cliente tiene nombre, teléfono, IP,
-  plan, precio mensual, día de corte (1–28) y seguimiento de **Roku** (si lo
-  tiene y si está pagado).
+  plan, precio mensual, día de corte (1–31) y seguimiento de **Roku** (si lo
+  tiene y si está pagado). Incluye una herramienta para corregir de golpe el
+  día de corte de los clientes importados (que entran con día 1).
 - **Pagos:** registrar un pago (fecha, monto, método y **quién lo cobró**) y
   consultar/eliminar pagos de un cliente.
 - **Cobros:** clientes **vencidos** y los que vencen en los próximos 7 días,
@@ -58,11 +59,16 @@ Abre tu navegador en <http://localhost:3000>.
 
 ### Regla de facturación
 
-Cada pago cubre **un mes**, así que el próximo pago vence un mes después del
-último pago: si el último pago fue el 20 de octubre, el siguiente vence el
-20 de noviembre y el cliente **no** aparece como vencido hasta que pasa esa
-fecha. El día de corte se usa como referencia para clientes que todavía no
-tienen ningún pago registrado. Toda esta lógica vive en
+El **día de corte** es fijo para cada cliente (1–31) y el **pago** es un hecho
+aparte. Un pago cubre al cliente hasta el **siguiente día de corte** posterior a
+la fecha del pago. Ejemplos con corte el día 20:
+
+- pagó el 20 de octubre → su próximo pago vence el 20 de noviembre;
+- pagó tarde el 25 de octubre → sigue cubierto hasta el 20 de noviembre;
+- pagó el 5 de octubre → le vence el 20 de octubre (el corte no cambia).
+
+Si el cliente no tiene ningún pago registrado, se considera vencido desde su
+corte más reciente. Toda esta lógica vive en
 [`src/utils/facturacion.js`](src/utils/facturacion.js) para no duplicarla entre
 pantallas.
 

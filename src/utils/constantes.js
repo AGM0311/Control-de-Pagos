@@ -7,6 +7,7 @@ export const API_ROUTES = {
     POST: "/clientes",
     PUT: (id) => `/clientes/${id}`,
     DELETE: (id) => `/clientes/${id}`,
+    CORTE_MASIVO: "/clientes-corte",
   },
   PAGOS: {
     POST: (id) => `/pago/${id}`,
