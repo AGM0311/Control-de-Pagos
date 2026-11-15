@@ -89,7 +89,8 @@
     "publish": {
       "provider": "github",
       "owner": "AGM0311",
-      "repo": "Control-de-Pagos"
+      "repo": "Control-de-Pagos",
+      "releaseType": "release"
     }
   }
 }
