@@ -7,6 +7,20 @@
 
 const MS_DIA = 1000 * 60 * 60 * 24;
 
+// Convierte un valor de fecha a una fecha LOCAL a medianoche.
+// Importante: new Date("YYYY-MM-DD") lo interpreta como UTC, lo que desplaza la
+// fecha varias horas según la zona horaria y rompe las comparaciones con fechas
+// locales. Esta función interpreta "YYYY-MM-DD" como fecha local.
+function parseFecha(valor) {
+  if (valor instanceof Date) return valor;
+  if (typeof valor === "string") {
+    const m = valor.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  }
+  const d = new Date(valor);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 // Día de corte normalizado (entre 1 y 28 para evitar problemas con meses cortos).
 export function diaCorte(cliente) {
   const d = Number(cliente?.fechaCorte);
@@ -45,14 +59,14 @@ export function estadoPago(cliente, hoy = new Date()) {
   // campo "fechaUltimoPago" (útil para cargar datos desde papel).
   let ultimoPago = null;
   (cliente?.pagos || []).forEach((p) => {
-    const d = new Date(p.fecha);
-    if (!Number.isNaN(d.getTime()) && (!ultimoPago || d > ultimoPago)) {
+    const d = parseFecha(p.fecha);
+    if (d && (!ultimoPago || d > ultimoPago)) {
       ultimoPago = d;
     }
   });
   if (cliente?.fechaUltimoPago) {
-    const d = new Date(cliente.fechaUltimoPago);
-    if (!Number.isNaN(d.getTime()) && (!ultimoPago || d > ultimoPago)) {
+    const d = parseFecha(cliente.fechaUltimoPago);
+    if (d && (!ultimoPago || d > ultimoPago)) {
       ultimoPago = d;
     }
   }
@@ -66,7 +80,7 @@ export function estadoPago(cliente, hoy = new Date()) {
 
 // Ordena los pagos por fecha, del más reciente al más antiguo.
 export function ordenarPagosDesc(pagos) {
-  return [...(pagos || [])].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+  return [...(pagos || [])].sort((a, b) => (parseFecha(b.fecha) || 0) - (parseFecha(a.fecha) || 0));
 }
 
 // Suma de los pagos realizados en el mes actual.
@@ -74,8 +88,8 @@ export function ingresosDelMes(clientes, hoy = new Date()) {
   let total = 0;
   (clientes || []).forEach((c) => {
     (c.pagos || []).forEach((p) => {
-      const d = new Date(p.fecha);
-      if (!Number.isNaN(d.getTime()) && d.getMonth() === hoy.getMonth() && d.getFullYear() === hoy.getFullYear()) {
+      const d = parseFecha(p.fecha);
+      if (d && d.getMonth() === hoy.getMonth() && d.getFullYear() === hoy.getFullYear()) {
         total += Number(p.monto) || 0;
       }
     });
@@ -88,9 +102,9 @@ export function ingresosDelDia(clientes, hoy = new Date()) {
   let total = 0;
   (clientes || []).forEach((c) => {
     (c.pagos || []).forEach((p) => {
-      const d = new Date(p.fecha);
+      const d = parseFecha(p.fecha);
       if (
-        !Number.isNaN(d.getTime()) &&
+        d &&
         d.getFullYear() === hoy.getFullYear() &&
         d.getMonth() === hoy.getMonth() &&
         d.getDate() === hoy.getDate()
@@ -107,9 +121,9 @@ export function pagosDelDia(clientes, hoy = new Date()) {
   let conteo = 0;
   (clientes || []).forEach((c) => {
     (c.pagos || []).forEach((p) => {
-      const d = new Date(p.fecha);
+      const d = parseFecha(p.fecha);
       if (
-        !Number.isNaN(d.getTime()) &&
+        d &&
         d.getFullYear() === hoy.getFullYear() &&
         d.getMonth() === hoy.getMonth() &&
         d.getDate() === hoy.getDate()
@@ -131,9 +145,10 @@ export function porCobrar(clientes, hoy = new Date()) {
 }
 
 // Enlace de WhatsApp para un teléfono (devuelve null si no hay número).
-// Si se pasa un mensaje, va pre-cargado en el chat.
+// Si se pasa un mensaje, va pre-cargado en el chat. Normaliza el número
+// (antepone 52 a números de 10 dígitos).
 export function whatsappLink(telefono, mensaje) {
-  const t = (telefono || "").replace(/[^\d]/g, "");
+  const t = normalizarTelefono(telefono);
   if (!t) return null;
   const base = `https://wa.me/${t}`;
   if (mensaje) return `${base}?text=${encodeURIComponent(mensaje)}`;
@@ -179,8 +194,8 @@ export function ingresosEnPeriodo(clientes, desde, hasta) {
   let total = 0;
   (clientes || []).forEach((c) => {
     (c.pagos || []).forEach((p) => {
-      const d = new Date(p.fecha);
-      if (!Number.isNaN(d.getTime()) && d >= desde && d < hasta) {
+      const d = parseFecha(p.fecha);
+      if (d && d >= desde && d < hasta) {
         total += Number(p.monto) || 0;
       }
     });
@@ -201,8 +216,8 @@ export function ingresosPorMes(clientes, meses = 12, hoy = new Date()) {
   }
   (clientes || []).forEach((c) => {
     (c.pagos || []).forEach((p) => {
-      const d = new Date(p.fecha);
-      if (Number.isNaN(d.getTime())) return;
+      const d = parseFecha(p.fecha);
+      if (!d) return;
       const clave = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       const fila = resultado.find((r) => r.mes === clave);
       if (fila) fila.total += Number(p.monto) || 0;
@@ -236,8 +251,8 @@ export function ingresosTotales(clientes) {
 
 // Formatea una fecha a "dd/mm/aaaa".
 export function formatearFecha(fecha) {
-  const d = new Date(fecha);
-  if (Number.isNaN(d.getTime())) return "—";
+  const d = parseFecha(fecha);
+  if (!d) return "—";
   return d.toLocaleDateString("es-MX");
 }
 

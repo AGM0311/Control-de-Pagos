@@ -253,6 +253,9 @@ export function Registro() {
               ))}
             </Form.Select>
           </Col>
+        </Row>
+
+        <Row className="mb-4 align-items-end">
           <Col md={3}>
             <Form.Label>Último pago</Form.Label>
             <Form.Control
@@ -264,9 +267,6 @@ export function Registro() {
               Para cargar pagos desde tu registro en papel.
             </Form.Text>
           </Col>
-        </Row>
-
-        <Row className="mb-4">
           <Col>
             <Button type="submit" variant="primary">
               {modoEdicion ? "Actualizar" : "Registrar"}
