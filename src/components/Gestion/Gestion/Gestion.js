@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Table, Button, Form } from "react-bootstrap";
 import { MdAttachMoney } from "react-icons/md";
+import { FaWhatsapp } from "react-icons/fa";
 import api from "../../../api/api";
 import { API_ROUTES } from "../../../utils/constantes";
-import { estadoPago, formatearFecha, formatearMonto } from "../../../utils/facturacion";
+import { estadoPago, formatearFecha, formatearMonto, porCobrar, whatsappLink } from "../../../utils/facturacion";
 
 export function Gestion() {
   const navigate = useNavigate();
@@ -54,6 +55,7 @@ export function Gestion() {
 
   const vencidos = conEstado.filter((c) => c.estado.vencido);
   const porVencer = conEstado.filter((c) => !c.estado.vencido);
+  const totalPorCobrar = porCobrar(clientes);
 
   const alertasDe = (clienteId) => alertas.filter((a) => a.clienteId === clienteId);
 
@@ -93,6 +95,17 @@ export function Gestion() {
           )}
         </td>
         <td>
+          {whatsappLink(cliente.telefono) && (
+            <Button
+              variant="outline-success"
+              size="sm"
+              className="me-2"
+              onClick={() => window.open(whatsappLink(cliente.telefono), "_blank")}
+              title="Enviar WhatsApp"
+            >
+              <FaWhatsapp />
+            </Button>
+          )}
           <Button variant="success" size="sm" onClick={() => cobrar(cliente.id)}>
             <MdAttachMoney className="me-1" />
             Cobrar
@@ -105,6 +118,13 @@ export function Gestion() {
   return (
     <div className="p-4">
       <h3 className="mb-3">Pagos próximos y vencidos</h3>
+
+      {vencidos.length > 0 && (
+        <div className="alert alert-danger py-2">
+          Tienes <strong>{vencidos.length}</strong> clientes vencidos · Por cobrar:{" "}
+          <strong>{formatearMonto(totalPorCobrar)}</strong>
+        </div>
+      )}
 
       <Form.Control
         type="text"

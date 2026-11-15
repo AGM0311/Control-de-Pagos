@@ -86,14 +86,43 @@ export function Reportes() {
     setMensaje({ tipo: "success", texto: "Clientes exportados a CSV." });
   };
 
+  const exportarPagosCSV = () => {
+    const columnas = ["Cliente", "Fecha", "Monto", "Método"];
+    const filas = [columnas];
+    clientes.forEach((c) => {
+      (c.pagos || []).forEach((p) => {
+        filas.push([c.nombre || "", p.fecha || "", p.monto || 0, p.metodo || ""]);
+      });
+    });
+    const csv = filas
+      .map((f) => f.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `pagos-${hoyISO()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setMensaje({ tipo: "success", texto: "Pagos exportados a CSV." });
+  };
+
   return (
     <div className="p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h3 className="mb-0">Reportes</h3>
-        <Button variant="primary" onClick={exportarCSV}>
-          <MdDownload className="me-1" />
-          Exportar clientes (CSV)
-        </Button>
+        <div className="d-flex gap-2">
+          <Button variant="primary" onClick={exportarCSV}>
+            <MdDownload className="me-1" />
+            Exportar clientes (CSV)
+          </Button>
+          <Button variant="outline-primary" onClick={exportarPagosCSV}>
+            <MdDownload className="me-1" />
+            Exportar pagos (CSV)
+          </Button>
+        </div>
       </div>
 
       {mensaje && (

@@ -2,9 +2,10 @@ import React, { useState, useEffect } from "react";
 import { Button, Form, Row, Col, Table, Alert, Modal } from "react-bootstrap";
 import { MdDelete, MdNotifications, MdOutlineAddComment } from "react-icons/md";
 import { FiEdit } from "react-icons/fi";
+import { FaWhatsapp } from "react-icons/fa";
 import api from "../../api/api";
 import { API_ROUTES, ESTADOS_CLIENTE } from "../../utils/constantes";
-import { estadoPago, formatearFecha, formatearMonto } from "../../utils/facturacion";
+import { estadoPago, formatearFecha, formatearMonto, whatsappLink } from "../../utils/facturacion";
 
 const FORM_VACIO = {
   id: null,
@@ -23,6 +24,7 @@ export function Registro() {
   const [modoEdicion, setModoEdicion] = useState(false);
   const [mensaje, setMensaje] = useState(null);
   const [busqueda, setBusqueda] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState("");
   const [formData, setFormData] = useState(FORM_VACIO);
 
   // Alertas / notas por cliente
@@ -151,6 +153,12 @@ export function Registro() {
 
   const clientesConEstado = clientes
     .map((c) => ({ ...c, estadoPago: estadoPago(c) }))
+    .filter((c) => {
+      if (filtroEstado === "activo") return c.estado === "activo";
+      if (filtroEstado === "suspendido") return c.estado === "suspendido";
+      if (filtroEstado === "vencido") return c.estadoPago.vencido;
+      return true;
+    })
     .filter(
       (c) =>
         !filtro ||
@@ -273,6 +281,40 @@ export function Registro() {
 
       <hr />
 
+      <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
+        <Button
+          size="sm"
+          variant={filtroEstado === "" ? "primary" : "outline-primary"}
+          onClick={() => setFiltroEstado("")}
+        >
+          Todos
+        </Button>
+        <Button
+          size="sm"
+          variant={filtroEstado === "activo" ? "primary" : "outline-primary"}
+          onClick={() => setFiltroEstado("activo")}
+        >
+          Activos
+        </Button>
+        <Button
+          size="sm"
+          variant={filtroEstado === "vencido" ? "danger" : "outline-danger"}
+          onClick={() => setFiltroEstado("vencido")}
+        >
+          Vencidos
+        </Button>
+        <Button
+          size="sm"
+          variant={filtroEstado === "suspendido" ? "secondary" : "outline-secondary"}
+          onClick={() => setFiltroEstado("suspendido")}
+        >
+          Suspendidos
+        </Button>
+        <span className="text-muted ms-auto">
+          Mostrando {clientesConEstado.length} de {clientes.length}
+        </span>
+      </div>
+
       <Form.Control
         type="text"
         className="mb-3"
@@ -316,7 +358,13 @@ export function Registro() {
                 <td>{cliente.fechaCorte}</td>
                 <td>{cliente.fechaUltimoPago ? formatearFecha(cliente.fechaUltimoPago) : "—"}</td>
                 <td>{formatearFecha(vencimiento)}</td>
-                <td>{vencido ? `-${cliente.estadoPago.diasAtraso}` : diffDias}</td>
+                <td>
+                  {vencido ? (
+                    <span className="badge bg-danger">Vencido {cliente.estadoPago.diasAtraso} días</span>
+                  ) : (
+                    <span className="text-muted">{diffDias} días</span>
+                  )}
+                </td>
                 <td>
                   {cliente.estado === "activo" ? (
                     <span className="badge bg-success">Activo</span>
@@ -325,6 +373,17 @@ export function Registro() {
                   )}
                 </td>
                 <td>
+                  {whatsappLink(cliente.telefono) && (
+                    <Button
+                      variant="success"
+                      size="sm"
+                      className="me-2"
+                      onClick={() => window.open(whatsappLink(cliente.telefono), "_blank")}
+                      title="Enviar WhatsApp"
+                    >
+                      <FaWhatsapp />
+                    </Button>
+                  )}
                   <Button variant="warning" size="sm" className="me-2" onClick={() => handleEdit(cliente)}>
                     <FiEdit />
                   </Button>

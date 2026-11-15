@@ -83,6 +83,60 @@ export function ingresosDelMes(clientes, hoy = new Date()) {
   return total;
 }
 
+// Suma de los pagos realizados HOY.
+export function ingresosDelDia(clientes, hoy = new Date()) {
+  let total = 0;
+  (clientes || []).forEach((c) => {
+    (c.pagos || []).forEach((p) => {
+      const d = new Date(p.fecha);
+      if (
+        !Number.isNaN(d.getTime()) &&
+        d.getFullYear() === hoy.getFullYear() &&
+        d.getMonth() === hoy.getMonth() &&
+        d.getDate() === hoy.getDate()
+      ) {
+        total += Number(p.monto) || 0;
+      }
+    });
+  });
+  return total;
+}
+
+// Cuántos pagos se registraron HOY.
+export function pagosDelDia(clientes, hoy = new Date()) {
+  let conteo = 0;
+  (clientes || []).forEach((c) => {
+    (c.pagos || []).forEach((p) => {
+      const d = new Date(p.fecha);
+      if (
+        !Number.isNaN(d.getTime()) &&
+        d.getFullYear() === hoy.getFullYear() &&
+        d.getMonth() === hoy.getMonth() &&
+        d.getDate() === hoy.getDate()
+      ) {
+        conteo += 1;
+      }
+    });
+  });
+  return conteo;
+}
+
+// Suma de lo que deben los clientes vencidos (su precio mensual).
+export function porCobrar(clientes, hoy = new Date()) {
+  let total = 0;
+  (clientes || []).forEach((c) => {
+    if (estadoPago(c, hoy).vencido) total += Number(c.precio) || 0;
+  });
+  return total;
+}
+
+// Enlace de WhatsApp para un teléfono (devuelve null si no hay número).
+export function whatsappLink(telefono) {
+  const t = (telefono || "").replace(/[^\d]/g, "");
+  if (!t) return null;
+  return `https://wa.me/${t}`;
+}
+
 // Total cobrado en un periodo arbitrario.
 export function ingresosEnPeriodo(clientes, desde, hasta) {
   let total = 0;

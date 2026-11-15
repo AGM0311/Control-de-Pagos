@@ -11,6 +11,7 @@ export const API_ROUTES = {
   PAGOS: {
     POST: (id) => `/pago/${id}`,
     DELETE: (id, index) => `/pago/${id}/${index}`,
+    LOTE: "/pagos-lote",
   },
   ALERTAS: {
     GET: "/alertas",

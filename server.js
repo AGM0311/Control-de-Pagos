@@ -220,6 +220,41 @@ app.delete("/pago/:id/:index", (req, res) => {
   res.json(cliente);
 });
 
+// Cobro masivo: registra el pago de varios clientes a la vez (fecha y método
+// comunes; el monto es el precio mensual de cada cliente).
+app.post("/pagos-lote", (req, res) => {
+  const { clienteIds, fecha, metodo } = req.body || {};
+  if (!Array.isArray(clienteIds) || clienteIds.length === 0) {
+    return res.status(400).json({ mensaje: "Debes indicar los clientes a cobrar" });
+  }
+  if (!esFechaValida(fecha)) {
+    return res.status(400).json({ mensaje: "'fecha' es obligatoria y debe ser válida" });
+  }
+
+  const clientes = readData(FILE_CLIENTES);
+  let cobrados = 0;
+  let omitidos = 0;
+
+  clienteIds.forEach((id) => {
+    const cliente = clientes.find((c) => c.id === id);
+    if (!cliente) {
+      omitidos++;
+      return;
+    }
+    const precio = Number(cliente.precio) || 0;
+    if (precio <= 0) {
+      omitidos++;
+      return;
+    }
+    if (!Array.isArray(cliente.pagos)) cliente.pagos = [];
+    cliente.pagos.push({ fecha, monto: precio, metodo: metodo || "Efectivo" });
+    cobrados++;
+  });
+
+  writeData(FILE_CLIENTES, clientes);
+  res.json({ cobrados, omitidos });
+});
+
 // ---------------------------------------------------------------- alertas
 
 app.get("/alertas", (_req, res) => {

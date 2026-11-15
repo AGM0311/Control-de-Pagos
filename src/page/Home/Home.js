@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import api from "../../api/api";
 import { API_ROUTES } from "../../utils/constantes";
-import { estadoPago, ingresosDelMes, formatearFecha, formatearMonto } from "../../utils/facturacion";
+import { estadoPago, ingresosDelMes, ingresosDelDia, porCobrar, formatearFecha, formatearMonto } from "../../utils/facturacion";
 
 export function Home() {
   const [clientes, setClientes] = useState([]);
@@ -40,6 +40,8 @@ export function Home() {
   const vencidos = clientesConEstado.filter((c) => c.estado.vencido).length;
   const proximosVencer = clientesConEstado.filter((c) => !c.estado.vencido && c.estado.diffDias <= 3).length;
   const ingresosMes = ingresosDelMes(clientes);
+  const cobradoHoy = ingresosDelDia(clientes);
+  const porCobrarTotal = porCobrar(clientes);
 
   const clientesFiltrados = clientesConEstado
     .filter(
@@ -61,11 +63,13 @@ export function Home() {
       <h2 className="mt-4">Panel de control</h2>
 
       {/* Tarjetas */}
-      <div className="row mt-4">
-        <Tarjeta titulo="Total de clientes" valor={clientes.length} />
+      <div className="row mt-4 g-2">
+        <Tarjeta titulo="Total clientes" valor={clientes.length} />
         <Tarjeta titulo="Activos" valor={activos} />
         <Tarjeta titulo="Vencidos" valor={vencidos} color="text-danger" />
-        <Tarjeta titulo="Ingresos del mes" valor={formatearMonto(ingresosMes)} />
+        <Tarjeta titulo="Por cobrar" valor={formatearMonto(porCobrarTotal)} color="text-danger" />
+        <Tarjeta titulo="Cobrado hoy" valor={formatearMonto(cobradoHoy)} color="text-success" />
+        <Tarjeta titulo="Ingresos del mes" valor={formatearMonto(ingresosMes)} color="text-success" />
       </div>
 
       {/* Gráfica y próximos a vencer */}
@@ -188,10 +192,12 @@ export function Home() {
 
 function Tarjeta({ titulo, valor, color }) {
   return (
-    <div className="col-md-3">
-      <div className="card p-3 text-center">
-        <h5>{titulo}</h5>
-        <h2 className={color || ""}>{valor}</h2>
+    <div className="col-6 col-md-2">
+      <div className="card p-2 text-center h-100">
+        <div className="small text-muted">{titulo}</div>
+        <h4 className={color || ""} style={{ fontSize: "1.15rem" }}>
+          {valor}
+        </h4>
       </div>
     </div>
   );
