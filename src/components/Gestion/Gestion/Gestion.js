@@ -5,7 +5,7 @@ import { MdAttachMoney } from "react-icons/md";
 import { FaWhatsapp } from "react-icons/fa";
 import api from "../../../api/api";
 import { API_ROUTES } from "../../../utils/constantes";
-import { estadoPago, formatearFecha, formatearMonto, porCobrar, whatsappLink } from "../../../utils/facturacion";
+import { estadoPago, formatearFecha, formatearMonto, porCobrar, whatsappLink, mensajeWhatsapp } from "../../../utils/facturacion";
 
 export function Gestion() {
   const navigate = useNavigate();
@@ -100,7 +100,7 @@ export function Gestion() {
               variant="outline-success"
               size="sm"
               className="me-2"
-              onClick={() => window.open(whatsappLink(cliente.telefono), "_blank")}
+              onClick={() => window.open(whatsappLink(cliente.telefono, mensajeWhatsapp(cliente)), "_blank")}
               title="Enviar WhatsApp"
             >
               <FaWhatsapp />

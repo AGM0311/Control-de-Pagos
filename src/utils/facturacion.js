@@ -131,10 +131,26 @@ export function porCobrar(clientes, hoy = new Date()) {
 }
 
 // Enlace de WhatsApp para un teléfono (devuelve null si no hay número).
-export function whatsappLink(telefono) {
+// Si se pasa un mensaje, va pre-cargado en el chat.
+export function whatsappLink(telefono, mensaje) {
   const t = (telefono || "").replace(/[^\d]/g, "");
   if (!t) return null;
-  return `https://wa.me/${t}`;
+  const base = `https://wa.me/${t}`;
+  if (mensaje) return `${base}?text=${encodeURIComponent(mensaje)}`;
+  return base;
+}
+
+// Mensaje predeterminado de WhatsApp según el estado de pago del cliente.
+export function mensajeWhatsapp(cliente, hoy = new Date()) {
+  const nombre = cliente?.nombre || "cliente";
+  const plan = cliente?.plan ? ` (${cliente.plan})` : "";
+  const estado = estadoPago(cliente, hoy);
+  const monto = formatearMonto(Number(cliente?.precio) || 0);
+
+  if (estado.vencido) {
+    return `¡Hola ${nombre}! 👋 Te saluda Servicios Ely. Tu pago de internet${plan} está pendiente desde hace ${estado.diasAtraso} días. Monto: ${monto}. ¿Podemos contar con tu pago hoy? ¡Gracias! 🙏`;
+  }
+  return `¡Hola ${nombre}! 👋 Te saluda Servicios Ely. Te recordamos que tu pago de internet${plan} vence en ${estado.diffDias} días. Monto: ${monto}. ¡Gracias! 🙏`;
 }
 
 // Total cobrado en un periodo arbitrario.

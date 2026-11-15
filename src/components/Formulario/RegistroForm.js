@@ -5,7 +5,7 @@ import { FiEdit } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
 import api from "../../api/api";
 import { API_ROUTES, ESTADOS_CLIENTE } from "../../utils/constantes";
-import { estadoPago, formatearFecha, formatearMonto, whatsappLink } from "../../utils/facturacion";
+import { estadoPago, formatearFecha, formatearMonto, whatsappLink, mensajeWhatsapp } from "../../utils/facturacion";
 
 const FORM_VACIO = {
   id: null,
@@ -378,7 +378,7 @@ export function Registro() {
                       variant="success"
                       size="sm"
                       className="me-2"
-                      onClick={() => window.open(whatsappLink(cliente.telefono), "_blank")}
+                      onClick={() => window.open(whatsappLink(cliente.telefono, mensajeWhatsapp(cliente)), "_blank")}
                       title="Enviar WhatsApp"
                     >
                       <FaWhatsapp />
