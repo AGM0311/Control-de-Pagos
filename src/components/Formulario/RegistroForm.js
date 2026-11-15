@@ -17,6 +17,8 @@ const FORM_VACIO = {
   fechaCorte: 1,
   estado: "activo",
   fechaUltimoPago: "",
+  roku: false,
+  rokuPagado: false,
 };
 
 export function Registro() {
@@ -127,6 +129,8 @@ export function Registro() {
       fechaCorte: cliente.fechaCorte || 1,
       estado: cliente.estado || "activo",
       fechaUltimoPago: cliente.fechaUltimoPago || "",
+      roku: cliente.roku === true,
+      rokuPagado: cliente.rokuPagado === true,
     });
     setModoEdicion(true);
     setMensaje(null);
@@ -150,6 +154,15 @@ export function Registro() {
     setMensaje(null);
   };
 
+  const toggleRokuPagado = async (cliente) => {
+    try {
+      await api.put(API_ROUTES.CLIENTES.PUT(cliente.id), { rokuPagado: !cliente.rokuPagado });
+      fetchClientes();
+    } catch (error) {
+      console.error("Error al cambiar estado de Roku:", error);
+    }
+  };
+
   const filtro = busqueda.trim().toLowerCase();
 
   const clientesConEstado = clientes
@@ -158,6 +171,7 @@ export function Registro() {
       if (filtroEstado === "activo") return c.estado === "activo";
       if (filtroEstado === "suspendido") return c.estado === "suspendido";
       if (filtroEstado === "vencido") return c.estadoPago.vencido;
+      if (filtroEstado === "roku-pendiente") return c.roku === true && c.rokuPagado !== true;
       return true;
     })
     .filter(
@@ -171,9 +185,14 @@ export function Registro() {
 
   return (
     <div className="p-4">
-      <h3 className="fw-bold mb-4 text-center">
-        {modoEdicion ? "Editar Cliente" : "Registrar Cliente"}
+      <h3 className="fw-bold mb-1 text-center">
+        {modoEdicion ? "✏️ Editar Cliente" : "➕ Registrar nuevo cliente"}
       </h3>
+      <p className="text-center text-muted mb-4">
+        {modoEdicion
+          ? "Modifica los datos del cliente y guarda los cambios."
+          : "Crea un cliente aquí directamente, sin necesidad de importar un archivo."}
+      </p>
 
       {mensaje && (
         <Alert variant={mensaje.tipo} onClose={() => setMensaje(null)} dismissible>
@@ -267,6 +286,24 @@ export function Registro() {
               Para cargar pagos desde tu registro en papel.
             </Form.Text>
           </Col>
+          <Col md={3}>
+            <Form.Label>Roku</Form.Label>
+            <Form.Check
+              type="checkbox"
+              label="Tiene Roku"
+              checked={formData.roku}
+              onChange={(e) =>
+                setFormData({ ...formData, roku: e.target.checked, rokuPagado: e.target.checked ? formData.rokuPagado : false })
+              }
+            />
+            <Form.Check
+              type="checkbox"
+              label="Roku pagado"
+              checked={formData.rokuPagado}
+              disabled={!formData.roku}
+              onChange={(e) => setFormData({ ...formData, rokuPagado: e.target.checked })}
+            />
+          </Col>
           <Col>
             <Button type="submit" variant="primary">
               {modoEdicion ? "Actualizar" : "Registrar"}
@@ -311,6 +348,13 @@ export function Registro() {
         >
           Suspendidos
         </Button>
+        <Button
+          size="sm"
+          variant={filtroEstado === "roku-pendiente" ? "warning" : "outline-warning"}
+          onClick={() => setFiltroEstado("roku-pendiente")}
+        >
+          Roku pendiente
+        </Button>
         <span className="text-muted ms-auto">
           Mostrando {clientesConEstado.length} de {clientes.length}
         </span>
@@ -338,6 +382,7 @@ export function Registro() {
             <th>Próximo pago</th>
             <th>Días</th>
             <th>Estado</th>
+            <th>Roku</th>
             <th>Acciones</th>
           </tr>
         </thead>
@@ -371,6 +416,20 @@ export function Registro() {
                     <span className="badge bg-success">Activo</span>
                   ) : (
                     <span className="badge bg-secondary">Suspendido</span>
+                  )}
+                </td>
+                <td>
+                  {cliente.roku ? (
+                    <Button
+                      size="sm"
+                      variant={cliente.rokuPagado ? "success" : "danger"}
+                      onClick={() => toggleRokuPagado(cliente)}
+                      title="Clic para cambiar entre pagado / pendiente"
+                    >
+                      {cliente.rokuPagado ? "Roku pagado ✓" : "Roku pendiente"}
+                    </Button>
+                  ) : (
+                    <span className="text-muted">—</span>
                   )}
                 </td>
                 <td>

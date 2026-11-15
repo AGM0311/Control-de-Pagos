@@ -119,6 +119,8 @@ function clienteNormalizado(body) {
     fechaCorte: Number(body.fechaCorte) || 1,
     estado: body.estado || "activo",
     fechaUltimoPago: body.fechaUltimoPago || "",
+    roku: body.roku === true,
+    rokuPagado: body.rokuPagado === true,
     pagos: [],
   };
 }
@@ -297,6 +299,8 @@ app.post("/importar-clientes", upload.single("archivo"), async (req, res) => {
       precio: 0,
       fechaCorte: 1,
       estado: "activo",
+      roku: false,
+      rokuPagado: false,
       pagos: [],
     });
 
@@ -373,6 +377,8 @@ app.post("/restaurar-clientes", (req, res) => {
       fechaCorte: Number(c.fechaCorte) || 1,
       estado: c.estado === "suspendido" ? "suspendido" : "activo",
       fechaUltimoPago: c.fechaUltimoPago || "",
+      roku: c.roku === true,
+      rokuPagado: c.rokuPagado === true,
       pagos: Array.isArray(c.pagos) ? c.pagos : [],
     });
     agregados++;
