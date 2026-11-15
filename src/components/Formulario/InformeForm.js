@@ -24,6 +24,9 @@ export function InformeForm() {
   const [fecha, setFecha] = useState(hoyISO());
   const [monto, setMonto] = useState("");
   const [metodo, setMetodo] = useState(METODOS_PAGO[0]);
+  const [cobrador, setCobrador] = useState(
+    () => localStorage.getItem("cobradorPredeterminado") || ""
+  );
   const [loading, setLoading] = useState(true);
   const [mensaje, setMensaje] = useState(null);
   const [modoMasivo, setModoMasivo] = useState(false);
@@ -80,9 +83,17 @@ export function InformeForm() {
   const cobradoHoy = ingresosDelDia(clientes);
   const pagosHoy = pagosDelDia(clientes);
 
+  // Nombres de cobradores ya usados, para sugerirlos al escribir.
+  const cobradores = [
+    ...new Set((clientes || []).flatMap((c) => (c.pagos || []).map((p) => p.cobrador).filter(Boolean))),
+  ].sort((a, b) => a.localeCompare(b, "es"));
+
   const registrarPago = async (cliente, datos) => {
     try {
       const res = await api.post(API_ROUTES.PAGOS.POST(cliente.id), datos);
+      if (datos.cobrador) {
+        localStorage.setItem("cobradorPredeterminado", datos.cobrador);
+      }
       setMensaje({
         tipo: "success",
         texto: `Pago de ${cliente.nombre} registrado (${formatearMonto(datos.monto)}).`,
@@ -107,7 +118,12 @@ export function InformeForm() {
       aplicarSeleccion(c);
       return;
     }
-    await registrarPago(c, { fecha: hoyISO(), monto: precio, metodo: METODOS_PAGO[0] });
+    await registrarPago(c, {
+      fecha: hoyISO(),
+      monto: precio,
+      metodo: METODOS_PAGO[0],
+      cobrador: cobrador.trim(),
+    });
   };
 
   const toggleSeleccion = (id) => {
@@ -121,6 +137,7 @@ export function InformeForm() {
         clienteIds: seleccionados,
         fecha: hoyISO(),
         metodo: METODOS_PAGO[0],
+        cobrador: cobrador.trim(),
       });
       setMensaje({
         tipo: "success",
@@ -128,6 +145,9 @@ export function InformeForm() {
           res.data.omitidos ? `, ${res.data.omitidos} omitidos` : ""
         }.`,
       });
+      if (cobrador.trim()) {
+        localStorage.setItem("cobradorPredeterminado", cobrador.trim());
+      }
       setSeleccionados([]);
       fetchClientes();
     } catch (error) {
@@ -143,6 +163,7 @@ export function InformeForm() {
       fecha,
       monto: parseFloat(monto),
       metodo,
+      cobrador: cobrador.trim(),
     });
     if (ok) {
       setFecha(hoyISO());
@@ -212,6 +233,16 @@ export function InformeForm() {
             </div>
           </div>
 
+          <Form.Control
+            type="text"
+            className="mb-3"
+            style={{ maxWidth: "320px" }}
+            placeholder="¿Quién cobró? (opcional)"
+            value={cobrador}
+            onChange={(e) => setCobrador(e.target.value)}
+            list="lista-cobradores"
+          />
+
           {vencidosLista.length === 0 ? (
             <p className="text-muted">No hay clientes vencidos.</p>
           ) : (
@@ -250,15 +281,24 @@ export function InformeForm() {
         </div>
       ) : (
         <>
-          <Form.Control
-            type="text"
-            className="mb-3"
-            style={{ maxWidth: "420px" }}
-            placeholder="Buscar cliente por nombre, IP o teléfono…"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            autoFocus
-          />
+          <div className="d-flex flex-wrap gap-2 mb-3">
+            <Form.Control
+              type="text"
+              style={{ maxWidth: "420px" }}
+              placeholder="Buscar cliente por nombre, IP o teléfono…"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              autoFocus
+            />
+            <Form.Control
+              type="text"
+              style={{ maxWidth: "240px" }}
+              placeholder="¿Quién cobra? (opcional)"
+              value={cobrador}
+              onChange={(e) => setCobrador(e.target.value)}
+              list="lista-cobradores"
+            />
+          </div>
 
           {!clienteSeleccionado ? (
             <>
@@ -326,10 +366,13 @@ export function InformeForm() {
                   <strong>Último pago:</strong> {formatearFecha(info.ultimoPago)}
                 </span>
                 <span>
-                  <strong>Próximo pago:</strong> {formatearFecha(info.vencimiento)}
+                  <strong>{info.vencido ? "Venció" : "Próximo pago"}:</strong>{" "}
+                  {formatearFecha(info.vencimiento)}
                 </span>
                 {info.vencido ? (
                   <Badge bg="danger">Vencido hace {info.diasAtraso} días</Badge>
+                ) : info.diffDias === 0 ? (
+                  <Badge bg="warning" text="dark">Vence hoy</Badge>
                 ) : (
                   <Badge bg="success">Al día · faltan {info.diffDias} días</Badge>
                 )}
@@ -337,11 +380,11 @@ export function InformeForm() {
 
               <Form onSubmit={handleAgregarPago}>
                 <Row className="mb-2 align-items-end">
-                  <Col md={3}>
+                  <Col md={2}>
                     <Form.Label>Fecha</Form.Label>
                     <Form.Control type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} required />
                   </Col>
-                  <Col md={3}>
+                  <Col md={2}>
                     <Form.Label>Monto</Form.Label>
                     <Form.Control
                       type="number"
@@ -353,7 +396,7 @@ export function InformeForm() {
                       required
                     />
                   </Col>
-                  <Col md={3}>
+                  <Col md={2}>
                     <Form.Label>Método</Form.Label>
                     <Form.Select value={metodo} onChange={(e) => setMetodo(e.target.value)}>
                       {METODOS_PAGO.map((m) => (
@@ -362,6 +405,16 @@ export function InformeForm() {
                         </option>
                       ))}
                     </Form.Select>
+                  </Col>
+                  <Col md={3}>
+                    <Form.Label>Cobró</Form.Label>
+                    <Form.Control
+                      type="text"
+                      value={cobrador}
+                      placeholder="¿Quién cobró?"
+                      onChange={(e) => setCobrador(e.target.value)}
+                      list="lista-cobradores"
+                    />
                   </Col>
                   <Col md={3}>
                     <Button type="submit" disabled={!fecha || !monto} className="w-100">
@@ -383,6 +436,7 @@ export function InformeForm() {
                       <th>Fecha</th>
                       <th>Monto</th>
                       <th>Método</th>
+                      <th>Cobró</th>
                       <th></th>
                     </tr>
                   </thead>
@@ -392,6 +446,7 @@ export function InformeForm() {
                         <td>{formatearFecha(p.fecha)}</td>
                         <td>{formatearMonto(p.monto)}</td>
                         <td>{p.metodo || "—"}</td>
+                        <td>{p.cobrador || "—"}</td>
                         <td>
                           <Button variant="outline-danger" size="sm" onClick={() => handleEliminarPago(i)}>
                             <MdDelete />
@@ -408,6 +463,12 @@ export function InformeForm() {
           )}
         </>
       )}
+
+      <datalist id="lista-cobradores">
+        {cobradores.map((n) => (
+          <option key={n} value={n} />
+        ))}
+      </datalist>
     </div>
   );
 }

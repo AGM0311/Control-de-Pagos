@@ -41,12 +41,15 @@ Abre tu navegador en <http://localhost:3000>.
 - **Inicio / Panel:** total de clientes, activos, vencidos e ingresos del mes,
   gráfica de estado y tabla con búsqueda por nombre, IP o teléfono.
 - **Clientes:** alta, edición y baja. Cada cliente tiene nombre, teléfono, IP,
-  plan, precio mensual y día de corte (1–28).
-- **Pagos:** registrar un pago (fecha, monto y método) y consultar/eliminar
-  pagos de un cliente.
+  plan, precio mensual, día de corte (1–28) y seguimiento de **Roku** (si lo
+  tiene y si está pagado).
+- **Pagos:** registrar un pago (fecha, monto, método y **quién lo cobró**) y
+  consultar/eliminar pagos de un cliente.
 - **Cobros:** clientes **vencidos** y los que vencen en los próximos 7 días,
-  con alertas por cliente.
-- **Historial:** historial de pagos por cliente con total acumulado.
+  con alertas por cliente y recordatorios masivos por WhatsApp.
+- **Historial:** historial de pagos por cliente con total acumulado y cobrador.
+- **Reportes:** ingresos por mes, clientes por plan y **total cobrado por
+  trabajador**, con exportación a CSV/JSON.
 - **Importar:** carga masiva desde `.docx` o `.xlsx` (columnas IP y Nombre),
   evitando duplicados por IP.
 - **Descargar / Restaurar respaldo:** guarda una copia de todos los clientes en
@@ -55,11 +58,13 @@ Abre tu navegador en <http://localhost:3000>.
 
 ### Regla de facturación
 
-Cada cliente paga mensualmente y tiene un día de corte. Se considera **al día**
-si registró un pago en el periodo de facturación vigente. Si su día de corte ya
-pasó y no hay pago, aparece como **vencido** con los días de atraso. Toda esta
-lógica vive en [`src/utils/facturacion.js`](src/utils/facturacion.js) para no
-duplicarla entre pantallas.
+Cada pago cubre **un mes**, así que el próximo pago vence un mes después del
+último pago: si el último pago fue el 20 de octubre, el siguiente vence el
+20 de noviembre y el cliente **no** aparece como vencido hasta que pasa esa
+fecha. El día de corte se usa como referencia para clientes que todavía no
+tienen ningún pago registrado. Toda esta lógica vive en
+[`src/utils/facturacion.js`](src/utils/facturacion.js) para no duplicarla entre
+pantallas.
 
 ## Estructura
 

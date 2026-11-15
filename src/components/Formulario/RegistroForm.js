@@ -379,7 +379,7 @@ export function Registro() {
             <th>Precio</th>
             <th>Corte</th>
             <th>Último pago</th>
-            <th>Próximo pago</th>
+            <th>Vence</th>
             <th>Días</th>
             <th>Estado</th>
             <th>Roku</th>
@@ -402,7 +402,9 @@ export function Registro() {
                 <td>{cliente.plan || "—"}</td>
                 <td>{formatearMonto(cliente.precio)}</td>
                 <td>{cliente.fechaCorte}</td>
-                <td>{cliente.fechaUltimoPago ? formatearFecha(cliente.fechaUltimoPago) : "—"}</td>
+                <td>
+                  {cliente.estadoPago.ultimoPago ? formatearFecha(cliente.estadoPago.ultimoPago) : "—"}
+                </td>
                 <td>{formatearFecha(vencimiento)}</td>
                 <td>
                   {vencido ? (

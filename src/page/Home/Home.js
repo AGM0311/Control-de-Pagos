@@ -42,7 +42,7 @@ export function Home() {
   const ingresosMes = ingresosDelMes(clientes);
   const cobradoHoy = ingresosDelDia(clientes);
   const porCobrarTotal = porCobrar(clientes);
-  const hoyVencen = clientesConEstado.filter((c) => c.estado.diffDias === 0).length;
+  const hoyVencen = clientesConEstado.filter((c) => !c.estado.vencido && c.estado.diffDias === 0).length;
 
   const clientesFiltrados = clientesConEstado
     .filter(
@@ -158,7 +158,7 @@ export function Home() {
                     <th>IP</th>
                     <th>Nombre</th>
                     <th>Teléfono</th>
-                    <th>Próximo pago</th>
+                    <th>Vence</th>
                     <th>Días</th>
                     <th>Estado</th>
                     <th>Alertas</th>

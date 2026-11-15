@@ -33,27 +33,34 @@ function soloDia(fecha) {
   return new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
 }
 
-// Estado de pago de un cliente:
-//  - vencimiento: próxima fecha de corte.
-//  - diffDias: días que faltan para el próximo corte (siempre >= 0).
-//  - vencido: true si el último corte ya pasó y no registró ningún pago posterior.
-//  - diasAtraso: días de atraso (0 si está al día).
+// Suma un mes a una fecha conservando el día (si el mes destino es más corto,
+// usa el último día de ese mes). Ej: 31 de enero + 1 mes = 28/29 de febrero.
+export function sumarUnMes(fecha) {
+  const dia = fecha.getDate();
+  const destino = new Date(fecha.getFullYear(), fecha.getMonth() + 1, 1);
+  const ultimoDia = new Date(destino.getFullYear(), destino.getMonth() + 1, 0).getDate();
+  destino.setDate(Math.min(dia, ultimoDia));
+  return soloDia(destino);
+}
+
+// Estado de pago de un cliente.
+//
+// Regla principal (la que espera el negocio): cada pago cubre UN MES, así que el
+// próximo pago vence un mes después del último pago. Ejemplo: si el último pago
+// fue el 20 de octubre, el próximo vence el 20 de noviembre. Hasta ese día el
+// cliente NO está vencido, aunque su "día de corte" sea otro.
+//
+// Si el cliente no tiene ningún pago registrado, se usa el día de corte como
+// referencia para calcular el atraso.
+//
+//  - vencimiento: fecha en que vence el próximo pago.
+//  - diffDias: días que faltan para el vencimiento (>= 0).
+//  - vencido: true si ya pasó la fecha de vencimiento.
+//  - diasAtraso: días transcurridos desde el vencimiento (0 si está al día).
 //  - ultimoPago: fecha del último pago (o null).
 export function estadoPago(cliente, hoy = new Date()) {
   const corte = diaCorte(cliente);
   const hoyDia = soloDia(hoy);
-
-  const corteEsteMes = new Date(hoy.getFullYear(), hoy.getMonth(), corte);
-  const corteMesPasado = new Date(hoy.getFullYear(), hoy.getMonth() - 1, corte);
-
-  // Próximo vencimiento (siempre en el futuro).
-  const vencimiento = corteEsteMes > hoyDia
-    ? corteEsteMes
-    : new Date(hoy.getFullYear(), hoy.getMonth() + 1, corte);
-  const diffDias = Math.round((soloDia(vencimiento) - hoyDia) / MS_DIA);
-
-  // Último corte: el ciclo que ya debería estar pagado.
-  const ultimoCorte = corteEsteMes <= hoyDia ? corteEsteMes : corteMesPasado;
 
   // Último pago registrado: el más reciente entre el historial de pagos y el
   // campo "fechaUltimoPago" (útil para cargar datos desde papel).
@@ -71,9 +78,28 @@ export function estadoPago(cliente, hoy = new Date()) {
     }
   }
 
-  // Está al día si pagó a partir del último corte (aunque haya sido tarde).
-  const vencido = !ultimoPago || ultimoPago < ultimoCorte;
-  const diasAtraso = vencido ? Math.round((hoyDia - soloDia(ultimoCorte)) / MS_DIA) : 0;
+  let vencimiento;
+  let diasAtraso = 0;
+  let vencido;
+
+  if (ultimoPago) {
+    // El pago cubre un mes: vence un mes después del último pago.
+    vencimiento = sumarUnMes(soloDia(ultimoPago));
+    vencido = hoyDia > vencimiento;
+    diasAtraso = vencido ? Math.round((hoyDia - vencimiento) / MS_DIA) : 0;
+  } else {
+    // Sin pagos registrados: usamos el día de corte.
+    const corteEsteMes = new Date(hoy.getFullYear(), hoy.getMonth(), corte);
+    const corteMesPasado = new Date(hoy.getFullYear(), hoy.getMonth() - 1, corte);
+    vencimiento = corteEsteMes >= hoyDia
+      ? corteEsteMes
+      : new Date(hoy.getFullYear(), hoy.getMonth() + 1, corte);
+    const ultimoCorte = corteEsteMes < hoyDia ? corteEsteMes : corteMesPasado;
+    vencido = true; // nunca ha pagado
+    diasAtraso = Math.max(0, Math.round((hoyDia - soloDia(ultimoCorte)) / MS_DIA));
+  }
+
+  const diffDias = Math.max(0, Math.round((soloDia(vencimiento) - hoyDia) / MS_DIA));
 
   return { vencimiento, diffDias, vencido, diasAtraso, ultimoPago };
 }
@@ -236,6 +262,20 @@ export function clientesPorPlan(clientes) {
     mapa[plan].ingresosMensuales += Number(c.precio) || 0;
   });
   return Object.values(mapa).sort((a, b) => b.cantidad - a.cantidad);
+}
+
+// Ingresos agrupados por cobrador (trabajador) → [{ cobrador, cantidad, total }]
+export function ingresosPorCobrador(clientes) {
+  const mapa = {};
+  (clientes || []).forEach((c) => {
+    (c.pagos || []).forEach((p) => {
+      const nombre = (p.cobrador || "").trim() || "Sin asignar";
+      if (!mapa[nombre]) mapa[nombre] = { cobrador: nombre, cantidad: 0, total: 0 };
+      mapa[nombre].cantidad += 1;
+      mapa[nombre].total += Number(p.monto) || 0;
+    });
+  });
+  return Object.values(mapa).sort((a, b) => b.total - a.total);
 }
 
 // Total cobrado histórico (todos los pagos de todos los clientes).

@@ -109,6 +109,18 @@ function validarCliente(body, parcial = false) {
   return errores;
 }
 
+// Recalcula "fechaUltimoPago" tomando la fecha más reciente entre el historial
+// de pagos y el valor guardado (útil cuando se capturó un pago desde papel).
+// Las fechas se guardan como "aaaa-mm-dd", así que se pueden ordenar como texto.
+function recalcularUltimoPago(cliente) {
+  const fechas = (cliente.pagos || [])
+    .map((p) => p.fecha)
+    .concat(cliente.fechaUltimoPago || [])
+    .filter((f) => typeof f === "string" && /^\d{4}-\d{2}-\d{2}/.test(f))
+    .sort();
+  cliente.fechaUltimoPago = fechas.length ? fechas[fechas.length - 1] : "";
+}
+
 function clienteNormalizado(body) {
   return {
     nombre: (body.nombre || "").trim(),
@@ -185,7 +197,7 @@ app.post("/pago/:id", (req, res) => {
   const cliente = clientes.find((c) => c.id === req.params.id);
   if (!cliente) return res.status(404).json({ mensaje: "Cliente no encontrado" });
 
-  const { fecha, monto, metodo } = req.body || {};
+  const { fecha, monto, metodo, cobrador } = req.body || {};
   const montoNum = Number(monto);
 
   if (!esFechaValida(fecha)) {
@@ -199,10 +211,15 @@ app.post("/pago/:id", (req, res) => {
     fecha,
     monto: montoNum,
     metodo: metodo || "Efectivo",
+    cobrador: (cobrador || "").toString().trim().slice(0, 60),
   };
 
   if (!Array.isArray(cliente.pagos)) cliente.pagos = [];
   cliente.pagos.push(nuevoPago);
+
+  // Mantener "último pago" sincronizado con el historial.
+  recalcularUltimoPago(cliente);
+
   writeData(FILE_CLIENTES, clientes);
   res.status(201).json(cliente);
 });
@@ -218,6 +235,14 @@ app.delete("/pago/:id/:index", (req, res) => {
   }
 
   cliente.pagos.splice(index, 1);
+
+  // Recalcular el "último pago" a partir de los pagos que quedan.
+  const fechas = cliente.pagos
+    .map((p) => p.fecha)
+    .filter((f) => typeof f === "string" && /^\d{4}-\d{2}-\d{2}/.test(f))
+    .sort();
+  cliente.fechaUltimoPago = fechas.length ? fechas[fechas.length - 1] : "";
+
   writeData(FILE_CLIENTES, clientes);
   res.json(cliente);
 });
@@ -225,7 +250,7 @@ app.delete("/pago/:id/:index", (req, res) => {
 // Cobro masivo: registra el pago de varios clientes a la vez (fecha y método
 // comunes; el monto es el precio mensual de cada cliente).
 app.post("/pagos-lote", (req, res) => {
-  const { clienteIds, fecha, metodo } = req.body || {};
+  const { clienteIds, fecha, metodo, cobrador } = req.body || {};
   if (!Array.isArray(clienteIds) || clienteIds.length === 0) {
     return res.status(400).json({ mensaje: "Debes indicar los clientes a cobrar" });
   }
@@ -249,7 +274,13 @@ app.post("/pagos-lote", (req, res) => {
       return;
     }
     if (!Array.isArray(cliente.pagos)) cliente.pagos = [];
-    cliente.pagos.push({ fecha, monto: precio, metodo: metodo || "Efectivo" });
+    cliente.pagos.push({
+      fecha,
+      monto: precio,
+      metodo: metodo || "Efectivo",
+      cobrador: (cobrador || "").toString().trim().slice(0, 60),
+    });
+    recalcularUltimoPago(cliente);
     cobrados++;
   });
 

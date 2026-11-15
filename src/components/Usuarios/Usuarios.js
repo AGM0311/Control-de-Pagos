@@ -129,6 +129,7 @@ export function Registro() {
                   <th>Fecha</th>
                   <th>Monto</th>
                   <th>Método</th>
+                  <th>Cobró</th>
                   <th></th>
                 </tr>
               </thead>
@@ -139,6 +140,7 @@ export function Registro() {
                     <td>{formatearFecha(pago.fecha)}</td>
                     <td>{formatearMonto(pago.monto)}</td>
                     <td>{pago.metodo || "—"}</td>
+                    <td>{pago.cobrador || "—"}</td>
                     <td>
                       <Button variant="outline-danger" size="sm" onClick={() => handleEliminarPago(index)}>
                         <MdDelete />

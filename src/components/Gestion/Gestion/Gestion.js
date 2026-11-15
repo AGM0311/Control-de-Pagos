@@ -104,7 +104,11 @@ export function Gestion() {
             if (c.nivel === "cronico") return <span className="badge bg-dark">Crónico · {c.dias} días</span>;
             if (c.nivel === "moroso") return <span className="badge bg-danger">Moroso · {c.dias} días</span>;
             if (c.nivel === "vencido") return <span className="badge bg-warning text-dark">Vencido · {c.dias} días</span>;
-            return <span className="text-muted">En {cliente.estado.diffDias} días</span>;
+            return cliente.estado.diffDias === 0 ? (
+              <span className="badge bg-warning text-dark">Vence hoy</span>
+            ) : (
+              <span className="text-muted">En {cliente.estado.diffDias} días</span>
+            );
           })()}
         </td>
         <td>
@@ -184,7 +188,7 @@ export function Gestion() {
                     <th>Cliente</th>
                     <th>Plan</th>
                     <th>Precio</th>
-                    <th>Corte</th>
+                    <th>Vence</th>
                     <th>Atraso</th>
                     <th>Alertas</th>
                     <th></th>

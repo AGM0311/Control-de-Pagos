@@ -18,6 +18,7 @@ import {
   ingresosTotales,
   ingresosPorMes,
   clientesPorPlan,
+  ingresosPorCobrador,
   formatearMonto,
   hoyISO,
 } from "../../utils/facturacion";
@@ -46,6 +47,7 @@ export function Reportes() {
   const totalHistorico = ingresosTotales(clientes);
   const porMes = ingresosPorMes(clientes, 12);
   const porPlan = clientesPorPlan(clientes);
+  const porCobrador = ingresosPorCobrador(clientes);
 
   const exportarCSV = () => {
     const columnas = [
@@ -87,11 +89,11 @@ export function Reportes() {
   };
 
   const exportarPagosCSV = () => {
-    const columnas = ["Cliente", "Fecha", "Monto", "Método"];
+    const columnas = ["Cliente", "Fecha", "Monto", "Método", "Cobrado por"];
     const filas = [columnas];
     clientes.forEach((c) => {
       (c.pagos || []).forEach((p) => {
-        filas.push([c.nombre || "", p.fecha || "", p.monto || 0, p.metodo || ""]);
+        filas.push([c.nombre || "", p.fecha || "", p.monto || 0, p.metodo || "", p.cobrador || ""]);
       });
     });
     const csv = filas
@@ -121,6 +123,7 @@ export function Reportes() {
       },
       ingresosPorMes: porMes,
       clientesPorPlan: porPlan,
+      cobradoPorTrabajador: porCobrador,
     };
     const blob = new Blob([JSON.stringify(reporte, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -275,6 +278,38 @@ export function Reportes() {
                   </tr>
                 </tbody>
               </Table>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+
+      <Row className="mb-4">
+        <Col md={12}>
+          <Card>
+            <Card.Body>
+              <Card.Title>Cobrado por trabajador</Card.Title>
+              {porCobrador.length === 0 ? (
+                <p className="text-muted mb-0">Todavía no hay pagos registrados.</p>
+              ) : (
+                <Table striped bordered hover responsive>
+                  <thead>
+                    <tr>
+                      <th>Trabajador</th>
+                      <th>Pagos</th>
+                      <th>Total cobrado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {porCobrador.map((c) => (
+                      <tr key={c.cobrador}>
+                        <td>{c.cobrador}</td>
+                        <td>{c.cantidad}</td>
+                        <td>{formatearMonto(c.total)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              )}
             </Card.Body>
           </Card>
         </Col>
