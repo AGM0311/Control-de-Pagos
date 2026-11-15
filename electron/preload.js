@@ -1,9 +1,13 @@
-// Preload de Electron. Por ahora la app no expone APIs de Electron al frontend
-// (todo se comunica por HTTP con el backend local). Se mantiene por si en el
-// futuro necesitas exponer algo de forma controlada mediante contextBridge.
-const { contextBridge } = require("electron");
+// Preload de Electron.
+// Expone una API mínima y controlada al frontend mediante contextBridge.
+const { contextBridge, ipcRenderer } = require("electron");
 
-contextBridge.exposeInMainWorld("appInfo", {
+contextBridge.exposeInMainWorld("electronAPI", {
   plataforma: process.platform,
-  version: process.env.npm_package_version || "0.0.0",
+  getVersion: () => ipcRenderer.invoke("app:version"),
+  checkForUpdates: () => ipcRenderer.invoke("app:check-updates"),
+  installUpdate: () => ipcRenderer.invoke("app:install-update"),
+  onUpdateStatus: (callback) => {
+    ipcRenderer.on("update-status", (_event, payload) => callback(payload));
+  },
 });

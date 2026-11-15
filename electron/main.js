@@ -3,7 +3,7 @@
 // carga el frontend. En producción el propio backend sirve la carpeta `build/`
 // en http://localhost:3001, así que frontend y backend comparten origen.
 
-const { app, BrowserWindow, shell } = require("electron");
+const { app, BrowserWindow, shell, ipcMain } = require("electron");
 const path = require("path");
 const { autoUpdater } = require("electron-updater");
 
@@ -51,6 +51,42 @@ function createWindow() {
     mainWindow = null;
   });
 }
+
+// ---------------------------------------------------------------- IPC
+
+function enviarEstadoActualizacion(payload) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send("update-status", payload);
+  }
+}
+
+ipcMain.handle("app:version", () => app.getVersion());
+
+ipcMain.handle("app:check-updates", async () => {
+  if (!app.isPackaged) {
+    return { ok: false, mensaje: "Las actualizaciones solo funcionan en la app instalada." };
+  }
+  try {
+    const resultado = await autoUpdater.checkForUpdates();
+    return { ok: true, version: resultado?.updateInfo?.version || null };
+  } catch (err) {
+    return { ok: false, mensaje: err?.message || String(err) };
+  }
+});
+
+ipcMain.handle("app:install-update", () => {
+  autoUpdater.quitAndInstall(false, true);
+  return { ok: true };
+});
+
+// Eventos del auto-updater → interfaz.
+autoUpdater.on("checking-for-update", () => enviarEstadoActualizacion({ channel: "checking" }));
+autoUpdater.on("update-available", (info) => enviarEstadoActualizacion({ channel: "available", data: info }));
+autoUpdater.on("update-not-available", (info) => enviarEstadoActualizacion({ channel: "not-available", data: info }));
+autoUpdater.on("update-downloaded", (info) => enviarEstadoActualizacion({ channel: "downloaded", data: info }));
+autoUpdater.on("error", (err) => enviarEstadoActualizacion({ channel: "error", data: err?.message || String(err) }));
+
+// ---------------------------------------------------------------- arranque
 
 app.whenReady().then(() => {
   createWindow();
