@@ -118,7 +118,7 @@ export function Home() {
                   <tr>
                     <th>Nombre</th>
                     <th>IP</th>
-                    <th>Días</th>
+                    <th>Faltan</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -129,7 +129,7 @@ export function Home() {
                       <tr key={c.id} style={{ backgroundColor: "#f8d7da" }}>
                         <td>{c.nombre}</td>
                         <td>{c.ip || "—"}</td>
-                        <td>{c.estado.diffDias}</td>
+                        <td>{c.estado.diffDias === 0 ? "Hoy" : `${c.estado.diffDias} días`}</td>
                       </tr>
                     ))}
                 </tbody>
@@ -159,7 +159,7 @@ export function Home() {
                     <th>Nombre</th>
                     <th>Teléfono</th>
                     <th>Vence</th>
-                    <th>Días</th>
+                    <th>Situación</th>
                     <th>Estado</th>
                     <th>Alertas</th>
                   </tr>
@@ -178,7 +178,13 @@ export function Home() {
                         <td>{c.nombre || "Sin nombre"}</td>
                         <td>{c.telefono || "N/A"}</td>
                         <td>{formatearFecha(vencimiento)}</td>
-                        <td>{vencido ? `-${diasAtraso}` : diffDias}</td>
+                        <td>
+                          {vencido
+                            ? `Vencido hace ${diasAtraso} días`
+                            : diffDias === 0
+                              ? "Vence hoy"
+                              : `Faltan ${diffDias} días`}
+                        </td>
                         <td>
                           {c.estado === "activo" ? (
                             <span className="badge bg-success">Activo</span>

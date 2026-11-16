@@ -79,6 +79,14 @@ function esFechaValida(valor) {
   return !Number.isNaN(d.getTime());
 }
 
+// Fecha de hoy en formato "aaaa-mm-dd" (zona horaria local).
+function fechaHoyISO() {
+  const d = new Date();
+  const mes = String(d.getMonth() + 1).padStart(2, "0");
+  const dia = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mes}-${dia}`;
+}
+
 function validarCliente(body, parcial = false) {
   const errores = [];
 
@@ -131,6 +139,7 @@ function clienteNormalizado(body) {
     fechaCorte: Number(body.fechaCorte) || 1,
     estado: body.estado || "activo",
     fechaUltimoPago: body.fechaUltimoPago || "",
+    fechaAlta: body.fechaAlta || fechaHoyISO(),
     roku: body.roku === true,
     rokuPagado: body.rokuPagado === true,
     pagos: [],
@@ -357,6 +366,7 @@ app.post("/importar-clientes", upload.single("archivo"), async (req, res) => {
       precio: 0,
       fechaCorte: 1,
       estado: "activo",
+      fechaAlta: fechaHoyISO(),
       roku: false,
       rokuPagado: false,
       pagos: [],
@@ -435,6 +445,7 @@ app.post("/restaurar-clientes", (req, res) => {
       fechaCorte: Number(c.fechaCorte) || 1,
       estado: c.estado === "suspendido" ? "suspendido" : "activo",
       fechaUltimoPago: c.fechaUltimoPago || "",
+      fechaAlta: c.fechaAlta || fechaHoyISO(),
       roku: c.roku === true,
       rokuPagado: c.rokuPagado === true,
       pagos: Array.isArray(c.pagos) ? c.pagos : [],
@@ -553,6 +564,23 @@ app.post("/backups/:id/restore", (req, res) => {
 // también lo sirve. Así la app de escritorio solo abre http://localhost:PORT
 // y frontend y backend comparten el mismo origen (sin problemas de CORS).
 function startServer(port = PORT) {
+  // Asigna fecha de alta a clientes de versiones anteriores (una sola vez):
+  // así un cliente sin pagos registrados no aparece vencido por cortes
+  // anteriores a la fecha en que se empezó a usar la app.
+  try {
+    const clientes = readData(FILE_CLIENTES);
+    let cambios = 0;
+    clientes.forEach((c) => {
+      if (!c.fechaAlta) {
+        c.fechaAlta = fechaHoyISO();
+        cambios++;
+      }
+    });
+    if (cambios > 0) writeData(FILE_CLIENTES, clientes);
+  } catch (error) {
+    console.error("Error al asignar fechas de alta:", error.message);
+  }
+
   if (fs.existsSync(BUILD_DIR)) {
     app.use(express.static(BUILD_DIR));
     app.get("*", (req, res) => {

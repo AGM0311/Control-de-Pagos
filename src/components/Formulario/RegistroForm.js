@@ -443,7 +443,7 @@ export function Registro() {
             <th>Corte</th>
             <th>Último pago</th>
             <th>Vence</th>
-            <th>Días</th>
+            <th>Situación</th>
             <th>Estado</th>
             <th>Roku</th>
             <th>Acciones</th>
@@ -475,12 +475,12 @@ export function Registro() {
                       className="badge bg-danger"
                       title={`Su pago venció el ${formatearFecha(vencimiento)} (corte el día ${cliente.fechaCorte}).`}
                     >
-                      Vencido {cliente.estadoPago.diasAtraso} días
+                      Vencido hace {cliente.estadoPago.diasAtraso} días
                     </span>
                   ) : diffDias === 0 ? (
                     <span className="badge bg-warning text-dark">Vence hoy</span>
                   ) : (
-                    <span className="text-muted">{diffDias} días</span>
+                    <span className="text-muted">Faltan {diffDias} días</span>
                   )}
                 </td>
                 <td>

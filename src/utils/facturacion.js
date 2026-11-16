@@ -95,13 +95,21 @@ export function estadoPago(cliente, hoy = new Date()) {
     vencido = hoyDia > vencimiento;
     diasAtraso = vencido ? Math.round((hoyDia - vencimiento) / MS_DIA) : 0;
   } else {
-    // Sin pagos registrados: vencido desde el corte más reciente.
+    // Sin pagos registrados: el primer vencimiento es el primer corte posterior
+    // a la fecha de alta del cliente. Así no aparece vencido por cortes
+    // anteriores a que existiera, y "Días" cuenta hacia el corte siguiente.
+    const alta = parseFecha(cliente?.fechaAlta) || hoyDia;
+    const primerVencimiento = siguienteCorte(soloDia(alta), corte);
+
     const corteEsteMes = corteEnMes(hoy.getFullYear(), hoy.getMonth(), corte);
     const corteMesPasado = corteEnMes(hoy.getFullYear(), hoy.getMonth() - 1, corte);
     const ultimoCorte = corteEsteMes <= hoyDia ? corteEsteMes : corteMesPasado;
-    vencimiento = ultimoCorte;
-    vencido = true;
-    diasAtraso = Math.max(0, Math.round((hoyDia - ultimoCorte) / MS_DIA));
+
+    // Si ya pasó algún corte desde su alta, vence en el más reciente; si no,
+    // vence en el primero que le toque.
+    vencimiento = ultimoCorte >= primerVencimiento ? ultimoCorte : primerVencimiento;
+    vencido = hoyDia > vencimiento;
+    diasAtraso = vencido ? Math.round((hoyDia - vencimiento) / MS_DIA) : 0;
   }
 
   const diffDias = Math.max(0, Math.round((soloDia(vencimiento) - hoyDia) / MS_DIA));

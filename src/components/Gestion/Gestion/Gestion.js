@@ -107,7 +107,7 @@ export function Gestion() {
             return cliente.estado.diffDias === 0 ? (
               <span className="badge bg-warning text-dark">Vence hoy</span>
             ) : (
-              <span className="text-muted">En {cliente.estado.diffDias} días</span>
+              <span className="text-muted">Faltan {cliente.estado.diffDias} días</span>
             );
           })()}
         </td>

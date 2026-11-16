@@ -67,8 +67,9 @@ la fecha del pago. Ejemplos con corte el día 20:
 - pagó tarde el 25 de octubre → sigue cubierto hasta el 20 de noviembre;
 - pagó el 5 de octubre → le vence el 20 de octubre (el corte no cambia).
 
-Si el cliente no tiene ningún pago registrado, se considera vencido desde su
-corte más reciente. Toda esta lógica vive en
+Si el cliente no tiene ningún pago registrado, su primer vencimiento es el
+**siguiente corte** a partir de la fecha en que se dio de alta (así no aparece
+vencido por cortes anteriores a que existiera). Toda esta lógica vive en
 [`src/utils/facturacion.js`](src/utils/facturacion.js) para no duplicarla entre
 pantallas.
 
