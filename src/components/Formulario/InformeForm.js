@@ -76,9 +76,9 @@ export function InformeForm() {
     .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || "", "es"));
 
   const vencidosLista = clientes
-    .map((c) => ({ ...c, estado: estadoPago(c) }))
-    .filter((c) => c.estado.vencido)
-    .sort((a, b) => b.estado.diasAtraso - a.estado.diasAtraso);
+    .map((c) => ({ ...c, estadoPago: estadoPago(c) }))
+    .filter((c) => c.estadoPago.vencido)
+    .sort((a, b) => b.estadoPago.diasAtraso - a.estadoPago.diasAtraso);
 
   const cobradoHoy = ingresosDelDia(clientes);
   const pagosHoy = pagosDelDia(clientes);
@@ -267,7 +267,7 @@ export function InformeForm() {
                     </td>
                     <td>{c.nombre}</td>
                     <td>{formatearMonto(c.precio)}</td>
-                    <td>{c.estado.diasAtraso} días</td>
+                    <td>{c.estadoPago.diasAtraso} días</td>
                   </tr>
                 ))}
               </tbody>

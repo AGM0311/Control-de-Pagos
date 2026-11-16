@@ -31,18 +31,18 @@ export function Home() {
 
   const clientesConEstado = clientes.map((c) => ({
     ...c,
-    estado: estadoPago(c),
+    estadoPago: estadoPago(c),
     alertasCliente: alertas.filter((a) => a.clienteId === c.id),
   }));
 
   const activos = clientes.filter((c) => c.estado === "activo").length;
   const suspendidos = clientes.filter((c) => c.estado !== "activo").length;
-  const vencidos = clientesConEstado.filter((c) => c.estado.vencido).length;
-  const proximosVencer = clientesConEstado.filter((c) => !c.estado.vencido && c.estado.diffDias <= 3).length;
+  const vencidos = clientesConEstado.filter((c) => c.estadoPago.vencido).length;
+  const proximosVencer = clientesConEstado.filter((c) => !c.estadoPago.vencido && c.estadoPago.diffDias <= 3).length;
   const ingresosMes = ingresosDelMes(clientes);
   const cobradoHoy = ingresosDelDia(clientes);
   const porCobrarTotal = porCobrar(clientes);
-  const hoyVencen = clientesConEstado.filter((c) => !c.estado.vencido && c.estado.diffDias === 0).length;
+  const hoyVencen = clientesConEstado.filter((c) => !c.estadoPago.vencido && c.estadoPago.diffDias === 0).length;
 
   const clientesFiltrados = clientesConEstado
     .filter(
@@ -123,13 +123,13 @@ export function Home() {
                 </thead>
                 <tbody>
                   {clientesConEstado
-                    .filter((c) => !c.estado.vencido && c.estado.diffDias >= 0 && c.estado.diffDias <= 3)
-                    .sort((a, b) => a.estado.diffDias - b.estado.diffDias)
+                    .filter((c) => !c.estadoPago.vencido && c.estadoPago.diffDias >= 0 && c.estadoPago.diffDias <= 3)
+                    .sort((a, b) => a.estadoPago.diffDias - b.estadoPago.diffDias)
                     .map((c) => (
                       <tr key={c.id} style={{ backgroundColor: "#f8d7da" }}>
                         <td>{c.nombre}</td>
                         <td>{c.ip || "—"}</td>
-                        <td>{c.estado.diffDias === 0 ? "Hoy" : `${c.estado.diffDias} días`}</td>
+                        <td>{c.estadoPago.diffDias === 0 ? "Hoy" : `${c.estadoPago.diffDias} días`}</td>
                       </tr>
                     ))}
                 </tbody>
@@ -166,7 +166,7 @@ export function Home() {
                 </thead>
                 <tbody>
                   {clientesFiltrados.map((c) => {
-                    const { vencido, vencimiento, diffDias, diasAtraso } = c.estado;
+                    const { vencido, vencimiento, diffDias, diasAtraso } = c.estadoPago;
                     let bgColor = "transparent";
                     if (vencido) bgColor = "#ffb3b3";
                     else if (diffDias <= 3) bgColor = "#f8d7da";

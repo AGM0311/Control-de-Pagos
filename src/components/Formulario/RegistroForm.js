@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button, Form, Row, Col, Table, Alert, Modal } from "react-bootstrap";
 import { MdDelete, MdNotifications, MdOutlineAddComment } from "react-icons/md";
 import { FiEdit } from "react-icons/fi";
@@ -29,6 +29,7 @@ export function Registro() {
   const [filtroEstado, setFiltroEstado] = useState("");
   const [formData, setFormData] = useState(FORM_VACIO);
   const [corteMasivo, setCorteMasivo] = useState("");
+  const nombreRef = useRef(null);
 
   // Alertas / notas por cliente
   const [clienteNotas, setClienteNotas] = useState(null);
@@ -92,6 +93,13 @@ export function Registro() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMensaje(null);
+
+    if (!String(formData.nombre).trim()) {
+      setMensaje({ tipo: "danger", texto: "Escribe el nombre del cliente para poder guardarlo." });
+      nombreRef.current?.focus();
+      return;
+    }
+
     const datos = {
       ...formData,
       precio: Number(formData.precio) || 0,
@@ -239,14 +247,15 @@ export function Registro() {
         </Alert>
       )}
 
-      <Form onSubmit={handleSubmit}>
+      <Form onSubmit={handleSubmit} noValidate autoComplete="off">
         <Row className="mb-3">
           <Col md={4}>
-            <Form.Label>Nombre *</Form.Label>
+            <Form.Label htmlFor="nombre">Nombre *</Form.Label>
             <Form.Control
+              id="nombre"
+              ref={nombreRef}
               type="text"
               value={formData.nombre}
-              required
               onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
             />
           </Col>
@@ -351,7 +360,7 @@ export function Registro() {
               {modoEdicion ? "Actualizar" : "Registrar"}
             </Button>
             {modoEdicion && (
-              <Button variant="secondary" onClick={handleCancelar} className="ms-2">
+              <Button type="button" variant="secondary" onClick={handleCancelar} className="ms-2">
                 Cancelar
               </Button>
             )}

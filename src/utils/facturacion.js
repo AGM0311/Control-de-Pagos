@@ -1,9 +1,9 @@
 // Lógica de facturación mensual para clientes de internet (ISP).
 //
-// Cada cliente paga una tarifa mensual y tiene un "día de corte" (fechaCorte,
-// un día del 1 al 28). Se considera "al día" si su último pago es posterior al
-// último corte que debería haber pagado. Estas funciones centralizan el cálculo
-// para no duplicarlo entre pantallas.
+// Cada cliente paga una tarifa mensual y tiene un "día de corte" fijo
+// (fechaCorte, un día del 1 al 31). El pago es un hecho aparte: un pago cubre
+// al cliente hasta el siguiente día de corte posterior a la fecha del pago.
+// Estas funciones centralizan el cálculo para no duplicarlo entre pantallas.
 
 const MS_DIA = 1000 * 60 * 60 * 24;
 
@@ -12,7 +12,8 @@ const MS_DIA = 1000 * 60 * 60 * 24;
 // fecha varias horas según la zona horaria y rompe las comparaciones con fechas
 // locales. Esta función interpreta "YYYY-MM-DD" como fecha local.
 function parseFecha(valor) {
-  if (valor instanceof Date) return valor;
+  if (!valor) return null;
+  if (valor instanceof Date) return Number.isNaN(valor.getTime()) ? null : valor;
   if (typeof valor === "string") {
     const m = valor.match(/^(\d{4})-(\d{2})-(\d{2})/);
     if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
@@ -57,8 +58,8 @@ export function siguienteCorte(fecha, corte) {
 //   - pagó tarde el 25 de octubre -> sigue cubierto hasta el 20 de noviembre.
 //   - pagó el 5 de octubre -> vence el 20 de octubre (el corte no cambia).
 //
-// Si el cliente no tiene ningún pago registrado, se considera vencido desde el
-// corte más reciente.
+// Si el cliente no tiene ningún pago registrado, su primer vencimiento es el
+// primer corte posterior a su fecha de alta.
 //
 //  - vencimiento: fecha en que vence (o venció) el pago.
 //  - diffDias: días que faltan para el vencimiento (>= 0).
@@ -85,33 +86,20 @@ export function estadoPago(cliente, hoy = new Date()) {
     }
   }
 
+  // Fecha en que vence el próximo pago.
   let vencimiento;
-  let diasAtraso = 0;
-  let vencido;
-
   if (ultimoPago) {
     // El pago cubre hasta el siguiente corte después de la fecha de pago.
     vencimiento = siguienteCorte(soloDia(ultimoPago), corte);
-    vencido = hoyDia > vencimiento;
-    diasAtraso = vencido ? Math.round((hoyDia - vencimiento) / MS_DIA) : 0;
   } else {
-    // Sin pagos registrados: el primer vencimiento es el primer corte posterior
-    // a la fecha de alta del cliente. Así no aparece vencido por cortes
-    // anteriores a que existiera, y "Días" cuenta hacia el corte siguiente.
+    // Sin pagos registrados: su primer vencimiento es el primer corte posterior
+    // a la fecha de alta. Si ya pasó, aparece vencido desde ese corte.
     const alta = parseFecha(cliente?.fechaAlta) || hoyDia;
-    const primerVencimiento = siguienteCorte(soloDia(alta), corte);
-
-    const corteEsteMes = corteEnMes(hoy.getFullYear(), hoy.getMonth(), corte);
-    const corteMesPasado = corteEnMes(hoy.getFullYear(), hoy.getMonth() - 1, corte);
-    const ultimoCorte = corteEsteMes <= hoyDia ? corteEsteMes : corteMesPasado;
-
-    // Si ya pasó algún corte desde su alta, vence en el más reciente; si no,
-    // vence en el primero que le toque.
-    vencimiento = ultimoCorte >= primerVencimiento ? ultimoCorte : primerVencimiento;
-    vencido = hoyDia > vencimiento;
-    diasAtraso = vencido ? Math.round((hoyDia - vencimiento) / MS_DIA) : 0;
+    vencimiento = siguienteCorte(soloDia(alta), corte);
   }
 
+  const vencido = hoyDia > vencimiento;
+  const diasAtraso = vencido ? Math.round((hoyDia - vencimiento) / MS_DIA) : 0;
   const diffDias = Math.max(0, Math.round((soloDia(vencimiento) - hoyDia) / MS_DIA));
 
   return { vencimiento, diffDias, vencido, diasAtraso, ultimoPago, corte };

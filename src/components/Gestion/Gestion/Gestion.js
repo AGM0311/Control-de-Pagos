@@ -60,7 +60,7 @@ export function Gestion() {
   const filtro = busqueda.trim().toLowerCase();
 
   const conEstado = clientes
-    .map((c) => ({ ...c, estado: estadoPago(c) }))
+    .map((c) => ({ ...c, estadoPago: estadoPago(c) }))
     .filter((c) => {
       const coincide =
         !filtro ||
@@ -69,12 +69,12 @@ export function Gestion() {
         (c.telefono || "").toString().toLowerCase().includes(filtro);
       // Con búsqueda: solo coincidencias. Sin búsqueda: vencidos + próximos 7 días.
       if (filtro) return coincide;
-      return c.estado.vencido || c.estado.diffDias <= 7;
+      return c.estadoPago.vencido || c.estadoPago.diffDias <= 7;
     })
-    .sort((a, b) => a.estado.diffDias - b.estado.diffDias);
+    .sort((a, b) => a.estadoPago.diffDias - b.estadoPago.diffDias);
 
-  const vencidos = conEstado.filter((c) => c.estado.vencido);
-  const porVencer = conEstado.filter((c) => !c.estado.vencido);
+  const vencidos = conEstado.filter((c) => c.estadoPago.vencido);
+  const porVencer = conEstado.filter((c) => !c.estadoPago.vencido);
   const totalPorCobrar = porCobrar(clientes);
 
   const alertasDe = (clienteId) => alertas.filter((a) => a.clienteId === clienteId);
@@ -87,9 +87,9 @@ export function Gestion() {
       <tr
         key={cliente.id}
         style={{
-          backgroundColor: cliente.estado.vencido
+          backgroundColor: cliente.estadoPago.vencido
             ? "#f8d7da"
-            : cliente.estado.diffDias <= 3
+            : cliente.estadoPago.diffDias <= 3
               ? "#fff3cd"
               : "transparent",
         }}
@@ -97,17 +97,17 @@ export function Gestion() {
         <td>{cliente.nombre}</td>
         <td>{cliente.plan || "—"}</td>
         <td>{formatearMonto(cliente.precio)}</td>
-        <td>{formatearFecha(cliente.estado.vencimiento)}</td>
+        <td>{formatearFecha(cliente.estadoPago.vencimiento)}</td>
         <td>
           {(() => {
             const c = clasificarAtraso(cliente);
             if (c.nivel === "cronico") return <span className="badge bg-dark">Crónico · {c.dias} días</span>;
             if (c.nivel === "moroso") return <span className="badge bg-danger">Moroso · {c.dias} días</span>;
             if (c.nivel === "vencido") return <span className="badge bg-warning text-dark">Vencido · {c.dias} días</span>;
-            return cliente.estado.diffDias === 0 ? (
+            return cliente.estadoPago.diffDias === 0 ? (
               <span className="badge bg-warning text-dark">Vence hoy</span>
             ) : (
-              <span className="text-muted">Faltan {cliente.estado.diffDias} días</span>
+              <span className="text-muted">Faltan {cliente.estadoPago.diffDias} días</span>
             );
           })()}
         </td>
