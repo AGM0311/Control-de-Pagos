@@ -13,6 +13,8 @@ import {
   ingresosDelDia,
   pagosDelDia,
 } from "../../utils/facturacion";
+import { useConfirmar } from "../../hooks/useConfirmar";
+import { ConfirmarModal } from "../ConfirmarModal";
 
 export function InformeForm() {
   const [searchParams] = useSearchParams();
@@ -31,6 +33,7 @@ export function InformeForm() {
   const [mensaje, setMensaje] = useState(null);
   const [modoMasivo, setModoMasivo] = useState(false);
   const [seleccionados, setSeleccionados] = useState([]);
+  const { confirmar, mensaje: confirmMensaje, responder: confirmResponder } = useConfirmar();
 
   const aplicarSeleccion = (c) => {
     if (!c) return;
@@ -172,7 +175,7 @@ export function InformeForm() {
   };
 
   const handleEliminarPago = async (index) => {
-    if (!window.confirm("¿Eliminar este pago?")) return;
+    if (!(await confirmar("¿Eliminar este pago?"))) return;
     try {
       const pagosOriginales = clienteSeleccionado.pagos || [];
       const ordenados = ordenarPagosDesc(pagosOriginales);
@@ -469,6 +472,8 @@ export function InformeForm() {
           <option key={n} value={n} />
         ))}
       </datalist>
+
+      <ConfirmarModal mensaje={confirmMensaje} onResponder={confirmResponder} />
     </div>
   );
 }

@@ -6,6 +6,8 @@ import { FaWhatsapp } from "react-icons/fa";
 import api from "../../api/api";
 import { API_ROUTES, ESTADOS_CLIENTE } from "../../utils/constantes";
 import { estadoPago, formatearFecha, formatearMonto, whatsappLink, mensajeWhatsapp, normalizarTelefono } from "../../utils/facturacion";
+import { useConfirmar } from "../../hooks/useConfirmar";
+import { ConfirmarModal } from "../ConfirmarModal";
 
 const FORM_VACIO = {
   id: null,
@@ -30,6 +32,7 @@ export function Registro() {
   const [formData, setFormData] = useState(FORM_VACIO);
   const [corteMasivo, setCorteMasivo] = useState("");
   const nombreRef = useRef(null);
+  const { confirmar, mensaje: confirmMensaje, responder: confirmResponder } = useConfirmar();
 
   // Alertas / notas por cliente
   const [clienteNotas, setClienteNotas] = useState(null);
@@ -147,7 +150,7 @@ export function Registro() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("¿Eliminar este cliente? Esta acción no se puede deshacer.")) return;
+    if (!(await confirmar("¿Eliminar este cliente? Esta acción no se puede deshacer."))) return;
     try {
       await api.delete(API_ROUTES.CLIENTES.DELETE(id));
       fetchClientes();
@@ -182,9 +185,9 @@ export function Registro() {
     }
     const cantidad = clientes.filter((c) => Number(c.fechaCorte) === 1).length;
     if (
-      !window.confirm(
+      !(await confirmar(
         `¿Cambiar el día de corte a ${dia} para los ${cantidad} cliente(s) que hoy tienen corte el día 1?`
-      )
+      ))
     ) {
       return;
     }
@@ -542,6 +545,8 @@ export function Registro() {
       </Table>
 
       {clientesConEstado.length === 0 && <p className="text-muted">No hay clientes registrados todavía.</p>}
+
+      <ConfirmarModal mensaje={confirmMensaje} onResponder={confirmResponder} />
 
       {/* Modal de notas / alertas */}
       <Modal show={mostrarNotas} onHide={() => setMostrarNotas(false)} centered>

@@ -4,12 +4,15 @@ import { MdDelete, MdReceipt } from "react-icons/md";
 import api from "../../api/api";
 import { API_ROUTES } from "../../utils/constantes";
 import { ordenarPagosDesc, formatearFecha, formatearMonto } from "../../utils/facturacion";
+import { useConfirmar } from "../../hooks/useConfirmar";
+import { ConfirmarModal } from "../ConfirmarModal";
 
 export function Registro() {
   const [clientes, setClientes] = useState([]);
   const [selectedCliente, setSelectedCliente] = useState(null);
   const [busqueda, setBusqueda] = useState("");
   const [mensaje, setMensaje] = useState(null);
+  const { confirmar, mensaje: confirmMensaje, responder: confirmResponder } = useConfirmar();
 
   const fetchClientes = async () => {
     try {
@@ -46,7 +49,7 @@ export function Registro() {
   const totalPagado = pagosOrdenados.reduce((acc, p) => acc + (Number(p.monto) || 0), 0);
 
   const handleEliminarPago = async (index) => {
-    if (!window.confirm("¿Eliminar este pago?")) return;
+    if (!(await confirmar("¿Eliminar este pago?"))) return;
     try {
       const pagosOriginales = selectedCliente.pagos || [];
       const indiceReal = pagosOriginales.indexOf(pagosOrdenados[index]);
@@ -155,6 +158,8 @@ export function Registro() {
           )}
         </div>
       )}
+
+      <ConfirmarModal mensaje={confirmMensaje} onResponder={confirmResponder} />
     </div>
   );
 }

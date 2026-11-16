@@ -4,6 +4,8 @@ import { MdDownload, MdUpload, MdRestore, MdBackup, MdDelete } from "react-icons
 import api from "../api/api";
 import { API_ROUTES } from "../utils/constantes";
 import { hoyISO, formatearFecha } from "../utils/facturacion";
+import { useConfirmar } from "../hooks/useConfirmar";
+import { ConfirmarModal } from "./ConfirmarModal";
 
 export function ImportarClientes() {
   const [archivo, setArchivo] = useState(null);
@@ -15,6 +17,7 @@ export function ImportarClientes() {
   // Respaldos automáticos
   const [backups, setBackups] = useState([]);
   const [mensajeBackups, setMensajeBackups] = useState(null);
+  const { confirmar, mensaje: confirmMensaje, responder: confirmResponder } = useConfirmar();
 
   const fetchBackups = async () => {
     try {
@@ -44,9 +47,9 @@ export function ImportarClientes() {
 
   const restaurarBackup = async (b) => {
     if (
-      !window.confirm(
+      !(await confirmar(
         `¿Restaurar el respaldo de ${formatearFecha(b.fecha)}? Se reemplazarán los datos actuales.`
-      )
+      ))
     ) {
       return;
     }
@@ -61,7 +64,7 @@ export function ImportarClientes() {
   };
 
   const eliminarBackup = async (b) => {
-    if (!window.confirm("¿Eliminar este respaldo?")) return;
+    if (!(await confirmar("¿Eliminar este respaldo?"))) return;
     try {
       await api.delete(API_ROUTES.BACKUPS.DELETE(b.id));
       fetchBackups();
@@ -279,6 +282,8 @@ export function ImportarClientes() {
           </Button>
         </div>
       </Card>
+
+      <ConfirmarModal mensaje={confirmMensaje} onResponder={confirmResponder} />
     </div>
   );
 }
