@@ -1,9 +1,10 @@
 // Lógica de facturación mensual para clientes de internet (ISP).
 //
 // Cada cliente paga una tarifa mensual y tiene un "día de corte" fijo
-// (fechaCorte, un día del 1 al 31). El pago es un hecho aparte: un pago cubre
-// al cliente hasta el siguiente día de corte posterior a la fecha del pago.
-// Estas funciones centralizan el cálculo para no duplicarlo entre pantallas.
+// (fechaCorte, un día del 1 al 31). Un pago cubre el mes en curso: da igual si
+// se hace unos días antes o después del corte, el siguiente pago vence el día
+// de corte del mes siguiente. Estas funciones centralizan el cálculo para no
+// duplicarlo entre pantallas.
 
 const MS_DIA = 1000 * 60 * 60 * 24;
 
@@ -49,14 +50,22 @@ export function siguienteCorte(fecha, corte) {
   return corteEnMes(fecha.getFullYear(), fecha.getMonth() + 1, corte);
 }
 
+// Corte del mes siguiente al mes de una fecha. Es la fecha en la que el cliente
+// debe volver a pagar después de haber pagado durante `fecha`: su pago cubre el
+// mes en curso, aunque lo haga unos días antes o después del corte.
+export function corteMesSiguiente(fecha, corte) {
+  return corteEnMes(fecha.getFullYear(), fecha.getMonth() + 1, corte);
+}
+
 // Estado de pago de un cliente.
 //
 // El día de corte es fijo para cada cliente y el pago es un hecho aparte. Un
-// pago cubre al cliente hasta el siguiente día de corte posterior a la fecha
-// del pago. Ejemplos con corte el día 20:
-//   - pagó el 20 de octubre  -> su próximo pago vence el 20 de noviembre.
-//   - pagó tarde el 25 de octubre -> sigue cubierto hasta el 20 de noviembre.
-//   - pagó el 5 de octubre -> vence el 20 de octubre (el corte no cambia).
+// pago cubre el mes en curso: da igual si se hace unos días antes o después del
+// corte, el siguiente pago vence el día de corte del mes siguiente. Ejemplos
+// con corte el día 15:
+//   - pagó el 13 (adelantado) -> vence el 15 del mes siguiente.
+//   - pagó el 15 (a tiempo)    -> vence el 15 del mes siguiente.
+//   - pagó el 20 (tarde)       -> vence el 15 del mes siguiente.
 //
 // Si el cliente no tiene ningún pago registrado, su primer vencimiento es el
 // primer corte posterior a su fecha de alta.
@@ -89,8 +98,9 @@ export function estadoPago(cliente, hoy = new Date()) {
   // Fecha en que vence el próximo pago.
   let vencimiento;
   if (ultimoPago) {
-    // El pago cubre hasta el siguiente corte después de la fecha de pago.
-    vencimiento = siguienteCorte(soloDia(ultimoPago), corte);
+    // El pago cubre el mes en curso: el siguiente pago vence el corte del mes
+    // siguiente (aunque haya pagado unos días antes o después del corte).
+    vencimiento = corteMesSiguiente(soloDia(ultimoPago), corte);
   } else {
     // Sin pagos registrados: su primer vencimiento es el primer corte posterior
     // a la fecha de alta. Si ya pasó, aparece vencido desde ese corte.
